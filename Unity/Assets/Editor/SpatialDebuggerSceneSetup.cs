@@ -229,35 +229,62 @@ namespace SpatialDebugger.EditorTools
 
             instance.name = left ? "OVRHandLeft" : "OVRHandRight";
 
-            var hand = instance.GetComponent<OVRHand>();
-            if (hand != null)
-            {
-                var serialized = new SerializedObject(hand);
-                SetEnum(serialized, "HandType",
-                    (int)(left ? OVRHand.Hand.HandLeft : OVRHand.Hand.HandRight));
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-            }
+            var wantedHand = (int)(left ? OVRHand.Hand.HandLeft : OVRHand.Hand.HandRight);
+            var wantedSkeleton = (int)(left ? OVRSkeleton.SkeletonType.XRHandLeft
+                                            : OVRSkeleton.SkeletonType.XRHandRight);
+            var wantedMesh = (int)(left ? OVRMesh.MeshType.XRHandLeft
+                                        : OVRMesh.MeshType.XRHandRight);
 
-            var skeleton = instance.GetComponent<OVRSkeleton>();
-            if (skeleton != null)
-            {
-                var serialized = new SerializedObject(skeleton);
-                SetEnum(serialized, "_skeletonType",
-                    (int)(left ? OVRSkeleton.SkeletonType.XRHandLeft
-                               : OVRSkeleton.SkeletonType.XRHandRight));
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-            }
+            var results = new List<string>();
+            results.Add(SetAndVerifyEnum(instance.GetComponent<OVRHand>(), "HandType", wantedHand));
+            results.Add(SetAndVerifyEnum(instance.GetComponent<OVRSkeleton>(), "_skeletonType",
+                wantedSkeleton));
+            results.Add(SetAndVerifyEnum(instance.GetComponent<OVRMesh>(), "_meshType", wantedMesh));
 
-            var mesh = instance.GetComponent<OVRMesh>();
-            if (mesh != null)
-            {
-                var serialized = new SerializedObject(mesh);
-                SetEnum(serialized, "_meshType",
-                    (int)(left ? OVRMesh.MeshType.XRHandLeft : OVRMesh.MeshType.XRHandRight));
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-            }
+            log.Add("hands: " + instance.name + " attached to " + anchorPath + " [" +
+                    string.Join(", ", results) + "]");
+        }
 
-            log.Add("hands: " + instance.name + " attached to " + anchorPath);
+        /// <summary>
+        /// Writes a serialized enum field and reads it straight back.
+        /// </summary>
+        /// <remarks>
+        /// Handedness lives in fields that are internal or protected to the
+        /// Oculus.VR assembly, so it can only be set through SerializedObject —
+        /// which means a typo'd field name, or a write that does not stick to a
+        /// prefab instance, fails silently and leaves a hand configured as
+        /// <c>Hand.None</c>. On device that is simply a hand that never tracks.
+        /// So: verify.
+        /// <para>
+        /// The numbers are not what they look like. These enums take their
+        /// values from <c>OVRPlugin</c>, where <c>None = -1</c>, so
+        /// <c>HandLeft = 0</c> and <c>HandRight = 1</c>, and
+        /// <c>SkeletonType.XRHandLeft = 4</c>, <c>XRHandRight = 5</c>. A
+        /// serialized <c>HandType: 0</c> therefore means <em>HandLeft</em>, not
+        /// None. Compare against <c>intValue</c> (the underlying value, which is
+        /// what a C# cast gives) and never against <c>enumValueIndex</c> (the
+        /// position in the declaration), or everything looks off by one.
+        /// </para>
+        /// </remarks>
+        private static string SetAndVerifyEnum(Component target, string field, int value)
+        {
+            if (target == null) return field + ": COMPONENT MISSING";
+
+            var serialized = new SerializedObject(target);
+            var property = serialized.FindProperty(field);
+            if (property == null) return field + ": FIELD NOT FOUND";
+
+            property.intValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // Re-read through a fresh SerializedObject: a stale one would just
+            // echo back what we set.
+            var readBack = new SerializedObject(target).FindProperty(field);
+            var actual = readBack != null ? readBack.intValue : int.MinValue;
+
+            return actual == value
+                ? field + "=" + actual
+                : field + ": WROTE " + value + " BUT READ " + actual;
         }
 
         // -- systems -------------------------------------------------------

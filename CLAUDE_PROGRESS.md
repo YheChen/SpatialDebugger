@@ -211,9 +211,13 @@ real hardware.
 
 - Whether `OVRHandPrefab` renders hands correctly with `XRHandLeft`/`XRHandRight`
   skeleton and mesh types (this project's `OVRRuntimeSettings` selects the
-  OpenXR hand skeleton, `handSkeletonVersion: 1`). If hands are invisible or
-  mangled, try `HandLeft`/`HandRight` instead — pointing and pinching will still
-  work either way, since `OVRHand` polls `OVRPlugin` directly.
+  OpenXR hand skeleton, `handSkeletonVersion: 1`). The scene setup tool now
+  reads each value back after writing it and logs what it actually got —
+  `[HandType=0, _skeletonType=4, _meshType=4]` for the left hand and
+  `[HandType=1, _skeletonType=5, _meshType=5]` for the right is correct. If
+  hands are invisible or mangled on device, try `HandLeft`/`HandRight` (0 and 1)
+  instead — pointing and pinching still work either way, since `OVRHand` polls
+  `OVRPlugin` directly and does not need the skeleton or mesh.
 - Whether the world-space panel sits at a comfortable distance and its buttons
   are hittable with a pinch. Tune `followDistance` / `followDrop` on
   `SpatialDebuggerPanel`.
@@ -314,6 +318,14 @@ were caught by the compile loop after an initial claim turned out to be wrong.
   `SerializedObject`.
 - **`OVRProjectConfig` is in an Editor-only assembly.** Runtime code cannot
   reference it.
+- **Meta's hand enums start at -1, so a serialized `0` means `HandLeft`, not
+  `None`.** `OVRPlugin.Hand` is `{None = -1, HandLeft = 0, HandRight = 1}` and
+  `SkeletonType` is `{None = -1, ..., XRHandLeft = 4, XRHandRight = 5}`. When
+  checking a `SerializedProperty` for one of these, compare `intValue` (the
+  underlying value, which is what a C# cast gives) — comparing against
+  `enumValueIndex` (the position in the declaration) makes everything look off
+  by one. `OVRHandPrefab` ships configured as a **left** hand, which is why the
+  generated scene records overrides for the right hand only.
 - **Building Block prefabs live under `Editor/` folders** and are excluded from
   player builds — a runtime `[SerializeField]` reference to one is null on
   device. Use the runtime prefabs (`Prefabs/OVRCameraRig.prefab`,
