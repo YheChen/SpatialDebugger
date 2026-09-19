@@ -1,0 +1,45 @@
+# --- Python / backend ---------------------------------------------------
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets. .env.example IS committed; .env is not.
+.env
+.env.local
+*.key
+
+# --- Unity --------------------------------------------------------------
+# Unity/.gitignore covers the rest; these are belt-and-braces because the
+# Unity folder is tracked by this repo directly.
+Unity/Library/
+Unity/Temp/
+Unity/Obj/
+Unity/Build/
+Unity/Builds/
+Unity/Logs/
+Unity/UserSettings/
+Unity/MemoryCaptures/
+Unity/Recordings/
+Unity/*.csproj
+Unity/*.sln
+Unity/*.slnx
+Unity/*.unityproj
+Unity/*.apk
+Unity/*.aab
+
+# --- Builds / artefacts -------------------------------------------------
+*.apk
+*.aab
+build/
+dist/
+
+# --- macOS / editors ----------------------------------------------------
+.DS_Store
+.idea/
+*.swp
