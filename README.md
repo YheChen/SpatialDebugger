@@ -28,7 +28,8 @@ Hack the North 2026.
 - **Demo mode that cannot fail**: no network, no computer vision, no sponsor
   APIs, no internet. The Quest answers from on-device scenarios.
 - **A FastAPI backend** with 54 passing tests that runs with no API keys.
-- **48 Unity EditMode tests** over the protocol, the JSON parser and the demo.
+- **66 Unity EditMode tests**, including an end-to-end check that a real
+  backend payload renders into real anchored GameObjects — no headset needed.
 - **A verified Quest 3 APK** — builds headlessly, correct permissions, one
   OpenXR loader. Not yet run on hardware.
 - **Seams for Huawei OMNI** (perception) and **OpenAI** (reasoning), both

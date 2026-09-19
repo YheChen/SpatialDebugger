@@ -36,7 +36,7 @@ namespace SpatialDebugger.UI
             go.layer = uiLayer;
 
             var collider = go.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
+            if (collider != null) Annotations.AnnotationVisuals.SafeDestroy(collider);
 
             var renderer = go.GetComponent<MeshRenderer>();
             if (renderer != null)

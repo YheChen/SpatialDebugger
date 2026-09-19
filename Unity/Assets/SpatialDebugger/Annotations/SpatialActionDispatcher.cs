@@ -123,7 +123,7 @@ namespace SpatialDebugger.Annotations
             var renderer = AddRenderer(host, action.Type);
             if (renderer == null)
             {
-                Destroy(host);
+                AnnotationVisuals.SafeDestroy(host);
                 var message = "no renderer for " + action.Type;
                 ActionRejected?.Invoke(action, message);
                 return false;
@@ -169,7 +169,7 @@ namespace SpatialDebugger.Annotations
         {
             foreach (var renderer in _live)
             {
-                if (renderer != null) Destroy(renderer.gameObject);
+                if (renderer != null) AnnotationVisuals.SafeDestroy(renderer.gameObject);
             }
 
             _live.Clear();
@@ -194,7 +194,7 @@ namespace SpatialDebugger.Annotations
             {
                 var oldest = _live[0];
                 _live.RemoveAt(0);
-                if (oldest != null) Destroy(oldest.gameObject);
+                if (oldest != null) AnnotationVisuals.SafeDestroy(oldest.gameObject);
             }
         }
 

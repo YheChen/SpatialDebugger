@@ -58,7 +58,7 @@ namespace SpatialDebugger.Annotations
         {
             if (_despawnAt > 0f && Time.time >= _despawnAt)
             {
-                Destroy(gameObject);
+                AnnotationVisuals.SafeDestroy(gameObject);
             }
         }
     }

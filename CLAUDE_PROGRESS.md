@@ -9,7 +9,7 @@ a headset, because no headset was attached.
 ## TL;DR for the morning
 
 The full `target → reasoning → spatial annotation` pipeline is built, compiles
-clean, passes **102 tests**, and **builds a working Quest 3 APK**. There is an
+clean, passes **120 tests**, and **builds a working Quest 3 APK**. There is an
 APK ready to sideload at `Unity/Build/Android/SpatialDebugger.apk`.
 
 Three blockers were found and fixed that would each have killed the demo. All
@@ -58,18 +58,31 @@ cd backend && .venv/bin/python -m pytest
 - Optional OpenAI (reasoning) and Huawei OMNI (perception) adapters, both
   lazily imported so the service starts and tests pass with neither installed
 
-### Unity — 48/48 EditMode tests pass
+### Unity — 66/66 EditMode tests pass
 
 ```
-unity tests: total=48 passed=48 failed=0 result=Passed
+unity tests: total=66 passed=66 failed=0 result=Passed
 ```
 
-Covering the `SpatialAction` protocol, the JSON parser against real backend
-payloads and every malformed shape (HTML error pages, bare arrays, NaN
-coordinates, short vectors, unknown types, the backend's error envelope), and
-the on-device demo scenarios. `DemoScenarioTests` also pins the scenario id
-list against the backend's, so the two hand-maintained copies cannot drift
-silently.
+Covering:
+
+- the `SpatialAction` protocol and its validation rules;
+- the JSON parser against a verbatim backend payload and every malformed shape
+  (HTML error pages, bare arrays, NaN coordinates, short vectors, unknown
+  types, the backend's error envelope, absent-vs-zero fields);
+- the on-device demo scenarios — `DemoScenarioTests` pins the scenario id list
+  against the backend's, so the two hand-maintained copies cannot drift
+  silently;
+- **the whole render path end to end** (`AnnotationPipelineTests`): a real
+  backend JSON body is parsed, dispatched, and asserted to produce actual
+  GameObjects with real meshes and materials, parented to a target that is
+  rotated and metres away from the origin, with `[0, 0.15, 0]` landing exactly
+  15 cm above it; plus no colliders on annotations, clear actually clearing,
+  re-running not accumulating, and invalid or failed responses rendering
+  nothing rather than throwing.
+
+That last group is the important one: **the demo is verified to render without
+a headset.** What is not verified is how any of it looks.
 
 Run them with:
 

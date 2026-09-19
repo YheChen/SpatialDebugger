@@ -126,6 +126,22 @@ namespace SpatialDebugger.Annotations
                    Mathf.RoundToInt(color.a * 255);
         }
 
+        /// <summary>
+        /// Destroys an object from either edit mode or play mode.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Object.Destroy"/> is a no-op that logs an error outside
+        /// play mode, which would leave stray colliders behind and make these
+        /// components untestable from an EditMode test.
+        /// </remarks>
+        public static void SafeDestroy(Object target)
+        {
+            if (target == null) return;
+
+            if (Application.isPlaying) Object.Destroy(target);
+            else Object.DestroyImmediate(target);
+        }
+
         // -- primitives ----------------------------------------------------
 
         /// <summary>
@@ -139,7 +155,7 @@ namespace SpatialDebugger.Annotations
             go.name = name;
 
             var collider = go.GetComponent<Collider>();
-            if (collider != null) Object.Destroy(collider);
+            if (collider != null) SafeDestroy(collider);
 
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPosition;

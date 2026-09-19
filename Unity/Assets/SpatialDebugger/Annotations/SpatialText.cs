@@ -208,11 +208,5 @@ namespace SpatialDebugger.Annotations
             if (string.IsNullOrEmpty(content)) return minimum;
             return Mathf.Max(minimum, content.Length * perCharacter);
         }
-
-        internal static void ResetCacheForTests()
-        {
-            _checked = false;
-            _tmpAvailable = false;
-        }
     }
 }
