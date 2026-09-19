@@ -16,8 +16,6 @@ namespace SpatialDebugger.Annotations
         /// <summary>How far above the anchor the caption floats, in metres.</summary>
         protected virtual float Lift => 0.05f;
 
-        protected virtual float TextHeight => 3.2f;
-
         protected override void Build()
         {
             var color = ResolvedColor;
@@ -59,11 +57,7 @@ namespace SpatialDebugger.Annotations
                 new Vector3(width + 0.02f * scale, 0.004f * scale, 1f),
                 AnnotationVisuals.Opaque(color));
 
-            var label = SpatialText.Create(plate.transform, text, TextHeight, Color.white);
-            if (label != null)
-            {
-                label.transform.localScale = Vector3.one * (0.012f * scale);
-            }
+            SpatialText.Create(plate.transform, text, height * 0.55f, Color.white);
         }
     }
 }

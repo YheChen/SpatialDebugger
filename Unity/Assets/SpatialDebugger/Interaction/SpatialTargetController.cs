@@ -36,6 +36,11 @@ namespace SpatialDebugger.Interaction
                  "the pinch and the target is not moved.")]
         [SerializeField] private UI.SpatialUIDriver uiDriver;
 
+        [Tooltip("Told about every new target, so target-space annotations land " +
+                 "in the right place. Serialized rather than wired by an event " +
+                 "subscription, so the wiring survives into the saved scene.")]
+        [SerializeField] private Annotations.SpatialActionDispatcher dispatcher;
+
         private readonly List<IPointerSource> _sources = new List<IPointerSource>();
         private Transform _reticle;
         private LineRenderer _beam;
@@ -61,6 +66,7 @@ namespace SpatialDebugger.Interaction
             if (raycaster == null) raycaster = gameObject.AddComponent<SpatialRaycaster>();
 
             if (uiDriver == null) uiDriver = FindAnyObjectByType<UI.SpatialUIDriver>();
+            if (dispatcher == null) dispatcher = FindAnyObjectByType<Annotations.SpatialActionDispatcher>();
 
             CollectSources();
             BuildReticle();
@@ -228,6 +234,10 @@ namespace SpatialDebugger.Interaction
             var viewer = Camera.main;
             if (viewer != null) target.FaceViewer(viewer.transform.position);
             else target.AlignToSurface(hit.Normal);
+
+            // Annotations are parented to the target, so the dispatcher has to
+            // learn about it before any analysis runs.
+            if (dispatcher != null) dispatcher.Target = target;
 
             TargetSelected?.Invoke(target);
         }

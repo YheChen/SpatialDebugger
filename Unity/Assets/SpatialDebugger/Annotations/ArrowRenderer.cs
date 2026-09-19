@@ -86,8 +86,7 @@ namespace SpatialDebugger.Annotations
                 new Vector3(width + 0.018f * scale, 0.003f * scale, 1f),
                 AnnotationVisuals.Opaque(color));
 
-            var text = SpatialText.Create(caption.transform, Action.Text, 3.2f, Color.white);
-            if (text != null) text.transform.localScale = Vector3.one * (0.012f * scale);
+            SpatialText.Create(caption.transform, Action.Text, 0.017f * scale, Color.white);
         }
 
         protected override void Update()

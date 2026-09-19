@@ -50,8 +50,8 @@ namespace SpatialDebugger.UI
         private static readonly Vector2 ButtonSize = new Vector2(0.20f, 0.042f);
         private const float PanelWidth = 0.24f;
 
-        private TMPro.TextMeshPro _statusText;
-        private TMPro.TextMeshPro _speechText;
+        private SpatialLabel _statusText;
+        private SpatialLabel _speechText;
         private SpatialButton _askButton;
         private SpatialButton _demoButton;
         private SpatialButton _nextButton;
@@ -119,23 +119,14 @@ namespace SpatialDebugger.UI
                 new Vector3(PanelWidth, 0.028f, 1f),
                 AnnotationVisuals.Opaque(new Color(0.18f, 0.77f, 0.95f)));
 
-            var title = SpatialText.Create(_body, "SpatialDebugger", 3.6f,
-                new Color(0.02f, 0.05f, 0.08f), TMPro.TextAlignmentOptions.Center);
-            if (title != null)
-            {
-                title.transform.localPosition = new Vector3(0f, height * 0.5f - 0.014f, 0.006f);
-                title.transform.localScale = Vector3.one * 0.014f;
-                title.rectTransform.sizeDelta = new Vector2(PanelWidth / 0.014f, 0.028f / 0.014f);
-            }
+            var title = SpatialText.Create(_body, "SpatialDebugger", 0.014f,
+                new Color(0.02f, 0.05f, 0.08f));
+            title.transform.localPosition = new Vector3(0f, height * 0.5f - 0.014f, 0.006f);
 
-            _statusText = SpatialText.Create(_body, "", 2.6f, new Color(0.75f, 0.82f, 0.9f),
-                TMPro.TextAlignmentOptions.TopLeft);
-            if (_statusText != null)
-            {
-                _statusText.transform.localPosition = new Vector3(-PanelWidth * 0.5f + 0.012f, 0.128f, 0.006f);
-                _statusText.transform.localScale = Vector3.one * 0.011f;
-                _statusText.rectTransform.sizeDelta = new Vector2(PanelWidth / 0.011f * 0.92f, 4.2f);
-            }
+            _statusText = SpatialText.Create(_body, "", 0.009f, new Color(0.75f, 0.82f, 0.9f),
+                SpatialTextAlign.Left);
+            _statusText.transform.localPosition =
+                new Vector3(-PanelWidth * 0.5f + 0.012f, 0.128f, 0.006f);
 
             var top = 0.064f;
             const float step = 0.048f;
@@ -151,15 +142,10 @@ namespace SpatialDebugger.UI
             _frontButton = SpatialButton.Create(_body, "Target In Front", ButtonSize,
                 new Color(0.75f, 0.55f, 1f), new Vector3(0f, top - step * 4f, 0.004f));
 
-            _speechText = SpatialText.Create(_body, "", 2.3f, new Color(0.62f, 0.7f, 0.8f),
-                TMPro.TextAlignmentOptions.TopLeft);
-            if (_speechText != null)
-            {
-                _speechText.transform.localPosition =
-                    new Vector3(-PanelWidth * 0.5f + 0.012f, top - step * 4f - 0.03f, 0.006f);
-                _speechText.transform.localScale = Vector3.one * 0.010f;
-                _speechText.rectTransform.sizeDelta = new Vector2(PanelWidth / 0.010f * 0.92f, 5f);
-            }
+            _speechText = SpatialText.Create(_body, "", 0.008f, new Color(0.62f, 0.7f, 0.8f),
+                SpatialTextAlign.Left);
+            _speechText.transform.localPosition =
+                new Vector3(-PanelWidth * 0.5f + 0.012f, top - step * 4f - 0.03f, 0.006f);
 
             _askButton.Pressed += () => { if (analysis != null) analysis.Run(); };
             _demoButton.Pressed += () => { if (analysis != null) analysis.RunLocal(); };
@@ -201,7 +187,7 @@ namespace SpatialDebugger.UI
         private void SetSpeech(string speech)
         {
             if (_speechText == null) return;
-            _speechText.text = string.IsNullOrEmpty(speech) ? string.Empty : "\"" + speech + "\"";
+            _speechText.Text = string.IsNullOrEmpty(speech) ? string.Empty : "\"" + Wrap(speech, 34) + "\"";
         }
 
         /// <summary>
@@ -229,12 +215,44 @@ namespace SpatialDebugger.UI
                 ? "Annotations: " + dispatcher.LiveCount
                 : string.Empty;
 
-            _statusText.text = string.Join("\n",
+            _statusText.Text = string.Join("\n",
                 targetLine, backendLine, pointerLine, annotationLine);
 
             if (_askButton != null) _askButton.Interactable = hasTarget;
             if (_demoButton != null) _demoButton.Interactable = hasTarget;
             if (_nextButton != null) _nextButton.Interactable = hasTarget;
+        }
+
+        /// <summary>
+        /// Hard-wraps at a character count. The legacy text backend has no word
+        /// wrapping of its own, and the speech line is the one string long
+        /// enough to run off the panel.
+        /// </summary>
+        private static string Wrap(string text, int columns)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+
+            var builder = new System.Text.StringBuilder(text.Length + 16);
+            var lineLength = 0;
+
+            foreach (var word in text.Split(' '))
+            {
+                if (lineLength > 0 && lineLength + word.Length + 1 > columns)
+                {
+                    builder.Append('\n');
+                    lineLength = 0;
+                }
+                else if (lineLength > 0)
+                {
+                    builder.Append(' ');
+                    lineLength++;
+                }
+
+                builder.Append(word);
+                lineLength += word.Length;
+            }
+
+            return builder.ToString();
         }
 
         // -- placement -----------------------------------------------------

@@ -36,6 +36,13 @@ namespace SpatialDebugger.Annotations
             "Sprites/Default",
             "TextMeshPro/Distance Field",
             "TextMeshPro/Mobile/Distance Field"
+            // Deliberately NOT "GUI/Text Shader": the legacy TextMesh font
+            // material uses it, but it lives in "Library/unity default
+            // resources" and is flagged HideFlags.DontSave. Adding it to
+            // Always Included Shaders fails the player build with
+            // "An asset is marked with HideFlags.DontSave but is included in
+            // the build". Unity pulls it in on its own for a scene that uses
+            // TextMesh.
         };
 
         private static readonly Dictionary<int, Material> OpaqueCache = new Dictionary<int, Material>();

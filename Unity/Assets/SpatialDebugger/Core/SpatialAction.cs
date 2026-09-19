@@ -179,9 +179,16 @@ namespace SpatialDebugger.Core
         }
 
         /// <summary>
-        /// Parses <c>#RRGGBB</c> or <c>#RRGGBBAA</c>. Returns false for anything
-        /// else so the renderer keeps its per-type default colour.
+        /// Parses a colour, returning false so the renderer keeps its per-type
+        /// default.
         /// </summary>
+        /// <remarks>
+        /// The backend only ever emits <c>#RRGGBB</c> / <c>#RRGGBBAA</c> and
+        /// validates that. This side is deliberately more lenient, because
+        /// Unity's parser also accepts CSS names — so a model that emits
+        /// <c>"red"</c> gets red rather than a silent fallback to the default.
+        /// Genuine junk still returns false.
+        /// </remarks>
         public static bool TryParseColor(string raw, out Color color)
         {
             color = UnityEngine.Color.white;

@@ -34,7 +34,7 @@ namespace SpatialDebugger.UI
         private Transform _plate;
         private Renderer _plateRenderer;
         private Renderer _accentRenderer;
-        private TMPro.TextMeshPro _text;
+        private SpatialLabel _text;
         private bool _hovered;
 
         public string Label
@@ -43,7 +43,7 @@ namespace SpatialDebugger.UI
             set
             {
                 label = value;
-                if (_text != null) _text.text = value;
+                if (_text != null) _text.Text = value;
             }
         }
 
@@ -109,14 +109,8 @@ namespace SpatialDebugger.UI
             accentBar.layer = 5;
             _accentRenderer = accentBar.GetComponent<Renderer>();
 
-            _text = SpatialText.Create(_plate, label, 3.4f, Color.white,
-                TMPro.TextAlignmentOptions.Center);
-            if (_text != null)
-            {
-                _text.transform.localPosition = new Vector3(0.006f, 0f, 0.001f);
-                _text.transform.localScale = Vector3.one * 0.013f;
-                _text.rectTransform.sizeDelta = new Vector2(size.x / 0.013f * 0.9f, size.y / 0.013f);
-            }
+            _text = SpatialText.Create(_plate, label, size.y * 0.42f, Color.white);
+            _text.transform.localPosition = new Vector3(0.006f, 0f, 0.001f);
 
             Refresh();
         }
@@ -153,7 +147,7 @@ namespace SpatialDebugger.UI
 
             if (_text != null)
             {
-                _text.color = interactable ? Color.white : new Color(1f, 1f, 1f, 0.4f);
+                _text.Color = interactable ? Color.white : new Color(1f, 1f, 1f, 0.4f);
             }
 
             // A hovered button leans very slightly toward the user.
