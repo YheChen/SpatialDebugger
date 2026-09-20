@@ -592,6 +592,14 @@ namespace SpatialDebugger.EditorTools
                 changes.Add("anchor support");
             }
 
+            // Passthrough Camera Access. Gates both the API and whether
+            // OVRManifestPreprocessor writes the HEADSET_CAMERA permission.
+            if (!config.isPassthroughCameraAccessEnabled)
+            {
+                config.isPassthroughCameraAccessEnabled = true;
+                changes.Add("passthrough camera access");
+            }
+
             if (!config.targetDeviceTypes.Contains(OVRProjectConfig.DeviceType.Quest3))
             {
                 config.targetDeviceTypes.Add(OVRProjectConfig.DeviceType.Quest3);
@@ -663,6 +671,7 @@ namespace SpatialDebugger.EditorTools
                 { "oculus.software.handtracking", "hand tracking feature" },
                 { "com.oculus.permission.HAND_TRACKING", "hand tracking permission" },
                 { "com.oculus.permission.USE_SCENE", "scene permission" },
+                { "horizonos.permission.HEADSET_CAMERA", "passthrough camera permission" },
                 { "com.oculus.permission.USE_ANCHOR_API", "anchor permission" },
                 { "com.oculus.intent.category.VR", "VR launch category" },
             };
@@ -672,8 +681,10 @@ namespace SpatialDebugger.EditorTools
                 .Select(entry => entry.Value)
                 .ToList();
 
+            // Derive the message from what was actually checked, so it cannot
+            // go stale when an entry is added to the required set.
             return missing.Count == 0
-                ? "verified: hand tracking, scene, anchor and VR entries all present"
+                ? "verified: " + string.Join(", ", required.Values) + " all present"
                 : "VERIFY FAILED: manifest is missing " + string.Join(", ", missing);
         }
     }

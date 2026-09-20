@@ -307,6 +307,13 @@ namespace SpatialDebugger.EditorTools
             var targetController = systems.AddComponent<SpatialTargetController>();
             var analysis = systems.AddComponent<DemoAnalysis>();
 
+            // Checkpoint 1: passthrough camera access, on its own object so it
+            // can be disabled without touching anything that already works.
+            var vision = new GameObject("CameraFeed");
+            vision.transform.SetParent(systems.transform, false);
+            vision.AddComponent<Vision.CameraFeed>();
+            log.Add("camera feed: passthrough camera access (inert if unsupported)");
+
             var sources = new GameObject("PointerSources");
             sources.transform.SetParent(systems.transform, false);
             sources.AddComponent<MetaHandPointerSource>();
