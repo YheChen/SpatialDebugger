@@ -65,9 +65,11 @@ namespace SpatialDebugger.Annotations
             _tmp.alignment = align == SpatialTextAlign.Center
                 ? TMPro.TextAlignmentOptions.Center
                 : TMPro.TextAlignmentOptions.TopLeft;
-            _tmp.textWrappingMode = TMPro.TextWrappingModes.Normal;
+            // Annotation labels are short and explicitly line-broken; never
+            // let TMP re-wrap them into a column at world scale.
+            _tmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
             _tmp.overflowMode = TMPro.TextOverflowModes.Overflow;
-            _tmp.rectTransform.sizeDelta = new Vector2(2.4f, 0.6f);
+            _tmp.rectTransform.sizeDelta = new Vector2(12f, 4f);
 
             Text = content;
             Color = color;
@@ -206,7 +208,14 @@ namespace SpatialDebugger.Annotations
             float minimum = 0.06f)
         {
             if (string.IsNullOrEmpty(content)) return minimum;
-            return Mathf.Max(minimum, content.Length * perCharacter);
+
+            var longest = 0;
+            foreach (var line in content.Split('\n'))
+            {
+                if (line.Length > longest) longest = line.Length;
+            }
+
+            return Mathf.Max(minimum, longest * perCharacter);
         }
     }
 }

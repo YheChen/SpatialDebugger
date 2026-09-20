@@ -6,6 +6,28 @@ a headset, because no headset was attached.
 
 ---
 
+## Physical Quest 3 test — confirmed working
+
+- Passthrough: real room visible
+- Hand tracking: hands visible, index pinch registers
+- Targeting: green target bracket follows pinch
+- World-space collider UI: hover highlight works
+- XR rendering: stereo, head rotation
+
+Reported not working, and fixed in this pass:
+
+- **No text rendered anywhere.** TMP Essential Resources had never been
+  imported (the batch import is async and silently no-ops under `-quit`), so
+  text fell back to legacy `TextMesh`, whose `GUI/Text Shader` cannot be pinned
+  into a build. Fixed by extracting the TMP `.unitypackage` directly into
+  `Assets/TextMesh Pro/` with its original GUIDs.
+
+Current demo (`Demo/PinchAnnotationPlacer.cs`): **every pinch drops a new
+world-fixed label** ("OBJECT / French: objet / Spanish: objeto") plus a marker
+at the pointed location — on a surface if physics hits one, otherwise 1.5 m
+along the hand ray. The control panel is debug UI and is hidden
+(`ShowDebugPanel = false` in `SpatialDebuggerSceneSetup.cs`).
+
 ## TL;DR for the morning
 
 The full `target → reasoning → spatial annotation` pipeline is built, compiles

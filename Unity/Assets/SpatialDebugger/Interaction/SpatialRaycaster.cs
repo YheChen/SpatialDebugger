@@ -63,7 +63,7 @@ namespace SpatialDebugger.Interaction
         [SerializeField] private float maxDistance = 6f;
 
         [Tooltip("Where a target lands when the ray hits nothing at all.")]
-        [SerializeField] private float fallbackDistance = 0.6f;
+        [SerializeField] private float fallbackDistance = 1.5f;
 
         private MrukSurfaceProbe _sceneProbe;
 
@@ -106,7 +106,10 @@ namespace SpatialDebugger.Interaction
             {
                 IsValid = true,
                 Point = ray.origin + ray.direction.normalized * fallbackDistance,
-                Normal = -ray.direction.normalized,
+                // No surface was hit, so there is no surface normal. Report
+                // world up: annotations authored "above the target" must stand
+                // up in the room, not march back along the ray toward the user.
+                Normal = Vector3.up,
                 Distance = fallbackDistance,
                 Source = SpatialHit.HitSource.Projected
             };

@@ -41,7 +41,8 @@ namespace SpatialDebugger.Annotations
 
             var text = Action != null ? Action.Text : string.Empty;
             var width = SpatialText.EstimateWidth(text) * scale;
-            var height = 0.028f * scale;
+            var lines = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+            var height = 0.028f * scale * lines;
 
             AnnotationVisuals.Primitive(
                 PrimitiveType.Quad, plate.transform, "Backing",

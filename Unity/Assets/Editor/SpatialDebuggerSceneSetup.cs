@@ -26,6 +26,12 @@ namespace SpatialDebugger.EditorTools
     {
         public const string ScenePath = "Assets/Scenes/SpatialDebugger.unity";
 
+        /// <summary>
+        /// The control panel is debug UI. Off for the clean pinch-to-annotate
+        /// demo; flip to true to get the buttons back.
+        /// </summary>
+        private const bool ShowDebugPanel = false;
+
         private const string CameraRigPrefab =
             "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         private const string HandPrefab =
@@ -314,6 +320,12 @@ namespace SpatialDebugger.EditorTools
             SetReference(analysis, "dispatcher", dispatcher);
             SetReference(targetController, "uiDriver", uiDriver);
 
+            // The demo: every pinch drops a world-fixed label.
+            var placer = systems.AddComponent<PinchAnnotationPlacer>();
+            SetReference(placer, "targetController", targetController);
+            SetReference(placer, "dispatcher", dispatcher);
+            log.Add("pinch placer: each pinch drops a world-space label + marker");
+
             SetReference(targetController, "dispatcher", dispatcher);
 
             log.Add("systems: AIClient, dispatcher, target controller, UI driver, demo analysis");
@@ -334,6 +346,7 @@ namespace SpatialDebugger.EditorTools
             go.transform.position = new Vector3(0f, 1.2f, 0.75f);
 
             var panel = go.AddComponent<SpatialDebuggerPanel>();
+            go.SetActive(ShowDebugPanel);
 
             if (systems != null)
             {
@@ -343,7 +356,7 @@ namespace SpatialDebugger.EditorTools
                 SetReference(panel, "client", systems.GetComponent<AIClient>());
             }
 
-            log.Add("panel: world-space control panel, follows the viewer");
+            log.Add("panel: world-space control panel, " + (ShowDebugPanel ? "shown" : "HIDDEN (debug UI)"));
         }
 
         /// <summary>
