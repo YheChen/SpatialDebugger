@@ -22,9 +22,9 @@ That made language learning a natural spatial-computing problem. A word can be t
 
 SpatialDebugger runs in Quest 3 passthrough. The user points and pinches, and an environment-depth raycast resolves the selected position. An **ANALYZING…** annotation appears immediately at that world-space target.
 
-The app projects the target into the Quest passthrough-camera image, crops around it, and sends the JPEG over USB to Moondream running through local Ollama on the developer laptop. The stabilized demo classifier accepts **laptop, table, chair, wall,** or **unknown**. A local vocabulary lookup adds French and Spanish, and the original annotation updates in place.
+The app projects the target into the Quest passthrough-camera image, crops around it, and sends the JPEG over USB to Moondream running through local Ollama on the developer laptop. Moondream returns a description, and the app constrains it to a small demo allowlist. The four judge-facing camera targets are **laptop, table, chair,** and **wall**; confident depth geometry can separately resolve **floor** and **ceiling**. A local vocabulary lookup adds French and Spanish, and the original annotation updates in place.
 
-The system does not pretend to recognize every object. Unsupported, uncertain, or malformed responses become **NOT RECOGNIZED** instead of being mapped to a convenient demo word.
+The system does not pretend to recognize every object. Unsupported, uncertain, or malformed responses become **NOT RECOGNIZED** instead of being mapped to a convenient demo word. Genuine model successes display an **AI RECOGNIZED** footer with the measured selection distance.
 
 ## How we built it
 
@@ -38,7 +38,7 @@ Ollama runs on the laptop. During development, Android Debug Bridge reverse port
 
 Each pinch snapshots its own world-space point and annotation handle. That keeps earlier labels independent and ensures an asynchronous model response updates the card that initiated it.
 
-Depth placement has been physically verified on Quest 3 at real measured distances. The implementation also uses high-confidence surface normals to orient and slightly offset annotations, with automated tests for horizontal, vertical, and angled cases. Wall/floor/ceiling presentation is still being checked on hardware, so we do not present that behavior as a completed device demonstration.
+Depth placement has been physically verified on Quest 3 at real measured distances. The current build can also identify floor and ceiling from a confident depth normal plus target height; those results are marked **DEPTH SURFACE**, not AI recognition. Normal-aware annotation orientation is implemented and test-covered, but we do not make a broader claim that every wall, floor, or ceiling presentation is reliable in every room.
 
 ## Challenges we ran into
 
@@ -46,14 +46,14 @@ Depth placement has been physically verified on Quest 3 at real measured distanc
 
 **One pinch crosses several coordinate systems.** A hand ray selects a world-space point, depth resolves its real distance, and the crop needs the corresponding camera pixel. We verified the actual JPEG pulled from the headset to make sure it was upright and centered on the selected region.
 
-**Small-model prompts need guardrails.** Moondream can return prose or an unsupported object. For the demo, we constrain both the prompt and parser to laptop, table, chair, wall, or unknown. Only the four supported classes count as successes.
+**Small-model prompts need guardrails.** In our tested Ollama configuration, instruction-style one-word prompts could return an empty answer or a junk token. A plain visual question was more reliable, so the app maps the resulting description through a narrow allowlist instead. Unsupported objects stay unrecognized.
 
 **Spatial ownership matters.** The user can move or pinch again while inference runs, so every request retains the target and renderer handle it started with.
 
 ## Accomplishments that we’re proud of
 
 - A hardware-verified Quest 3 loop from pinch and real RGB crop through local Moondream inference to an in-place world-space label update.
-- Correct Quest recognition observed for laptop, chair, and table; the final demo vocabulary also implements wall as a constrained category.
+- Correct Quest recognition observed for laptop, chair, table, and wall; floor and ceiling were also verified as separate depth-derived labels rather than model claims.
 - Real environment-depth hits observed at approximately 0.68 m, 0.70 m, 0.98 m, 1.06 m, 1.87 m, 2.99 m, and 3.54 m.
 - Multiple labels that remain fixed at their selected world positions during the current session.
 - Cloud-free recognition after setup: the model runs locally on the laptop and communicates with the Quest over USB.
@@ -91,7 +91,7 @@ We want to validate the surface-normal presentation across more real walls, floo
 
 ### Did you implement a generative AI model or API in your hack this weekend? If so, how and why did you use it?
 
-Yes. We integrated Moondream, a pre-trained generative vision-language model, through Ollama running locally on the developer laptop. When the user points and pinches, the Quest uses environment depth to select a physical target, captures a passthrough-camera crop centered on that point, and sends the JPEG over a USB ADB reverse connection to Ollama. Moondream classifies the crop as laptop, table, chair, wall, or unknown; a local lookup adds French and Spanish, and the same world-space annotation updates with the result. We used a vision-language model because the spatial gesture already identifies where to look, while local inference avoids a hosted vision API. Unsupported or uncertain answers become NOT RECOGNIZED.
+Yes. We integrated Moondream, a pre-trained generative vision-language model, through Ollama running locally on the developer laptop. When the user points and pinches, the Quest uses environment depth to select a physical target, captures a passthrough-camera crop centered on that point, and sends the JPEG over a USB ADB reverse connection to Ollama. The app constrains Moondream's description to a small demo allowlist centered on laptop, table, chair, and wall; a local lookup adds French and Spanish, and the same world-space annotation updates with the result. We used a vision-language model because the spatial gesture already identifies where to look, while local inference avoids a hosted vision API. Unsupported or uncertain answers become NOT RECOGNIZED.
 
 Truthful form selections:
 

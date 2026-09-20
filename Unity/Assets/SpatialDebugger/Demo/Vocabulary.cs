@@ -39,11 +39,15 @@ namespace SpatialDebugger.Demo
         /// here (á à é ó ú ñ ç) was confirmed present in that atlas.
         /// </para>
         /// </remarks>
-        public string ToLabel()
+        public string ToLabel(string footer = null)
         {
-            return "<size=150%>" + English.ToUpperInvariant() + "</size>\n\n" +
-                   "FR  " + French + "\n" +
-                   "ES  " + Spanish;
+            var label = "<size=150%>" + English.ToUpperInvariant() + "</size>\n\n" +
+                        "FR  " + French + "\n" +
+                        "ES  " + Spanish;
+
+            // Always four lines, footer or not, so the backing plate does not
+            // jump when ANALYZING is replaced by the answer.
+            return label + "\n<size=65%>" + (footer ?? " ") + "</size>";
         }
 
         public override string ToString() => English;
@@ -91,7 +95,18 @@ namespace SpatialDebugger.Demo
             new VocabularyEntry("Plant", "plante", "planta"),
             new VocabularyEntry("Lamp", "lampe", "lámpara"),
             new VocabularyEntry("Pen", "stylo", "bolígrafo"),
+
+            // The rest of the demo shortlist, plus the synonyms Moondream
+            // actually tends to return for them.
+            new VocabularyEntry("Computer", "ordinateur", "computadora"),
+            new VocabularyEntry("Couch", "canapé", "sofá"),
+            new VocabularyEntry("Sofa", "canapé", "sofá"),
+            new VocabularyEntry("Person", "personne", "persona"),
+            new VocabularyEntry("Man", "homme", "hombre"),
+            new VocabularyEntry("Woman", "femme", "mujer"),
             new VocabularyEntry("Wall", "mur", "pared"),
+            new VocabularyEntry("Floor", "sol", "suelo"),
+            new VocabularyEntry("Ceiling", "plafond", "techo"),
         };
 
         /// <summary>
@@ -111,6 +126,22 @@ namespace SpatialDebugger.Demo
         public static IReadOnlyList<VocabularyEntry> Cycle => Entries;
 
         public static int Count => Entries.Length;
+
+        /// <summary>
+        /// Longest object name the plate can show before it reads badly at
+        /// arm's length. Longer recognitions are elided.
+        /// </summary>
+        public const int MaximumWordLength = 22;
+
+        /// <summary>Every entry in both tables, for tests and tooling.</summary>
+        public static IEnumerable<VocabularyEntry> All
+        {
+            get
+            {
+                foreach (var entry in Entries) yield return entry;
+                foreach (var entry in Extra) yield return entry;
+            }
+        }
 
         /// <summary>Wraps in both directions, so any pinch index is valid.</summary>
         public static VocabularyEntry At(int index)
@@ -159,6 +190,15 @@ namespace SpatialDebugger.Demo
             // absent. Substituting a known word here would be faking the
             // result, which is worse than an honest gap.
             var word = string.IsNullOrWhiteSpace(english) ? "Object" : english.Trim();
+
+            // Normalisation should have reduced the reply to one noun, but if
+            // it ever hands back a phrase the plate is sized from the longest
+            // line and would grow off the side of the room.
+            if (word.Length > MaximumWordLength)
+            {
+                word = word.Substring(0, MaximumWordLength - 1) + "\u2026";
+            }
+
             return new VocabularyEntry(word, "\u2014", "\u2014");
         }
     }

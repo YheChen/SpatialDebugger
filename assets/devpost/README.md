@@ -2,8 +2,8 @@
 
 - `hero-concept-background.png` — generated raster background; no text; built-in image generation mode.
 - `hero-concept.svg` / `hero-concept.png` — designed concept composite with an explicit not-a-capture disclosure; use for social/backup art rather than primary Devpost evidence.
-- `architecture.svg` / `architecture.png` — deterministic explanatory workflow diagram.
-- `depth-placement.svg` / `depth-placement.png` — deterministic depth diagram using verified observed distances.
+- `architecture.svg` / `architecture.png` — deterministic diagram of the Quest → USB → local Ollama/Moondream → constrained result → annotation workflow.
+- `depth-placement.svg` / `depth-placement.png` — deterministic depth diagram using verified observed distances and the explicit 1.5 m no-hit fallback.
 
 ## Final image-generation prompt
 

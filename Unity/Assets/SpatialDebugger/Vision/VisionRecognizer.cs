@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Meta.XR.BuildingBlocks.AIBlocks;
+using SpatialDebugger.Demo;
 using UnityEngine;
 
 namespace SpatialDebugger.Vision
@@ -11,13 +12,13 @@ namespace SpatialDebugger.Vision
     /// <summary>What a recognition attempt produced.</summary>
     public class RecognitionResult
     {
-        /// <summary>An allowed lowercase class, unknown, or null on failure.</summary>
+        /// <summary>The recognised noun, lowercase, or null on failure.</summary>
         public string Word;
 
         /// <summary>The model's verbatim reply, for diagnosis.</summary>
         public string Raw;
 
-        public bool Success => RecognitionText.IsRecognizedClass(Word);
+        public bool Success => !string.IsNullOrEmpty(Word);
 
         /// <summary>Why it failed, when it did.</summary>
         public string Error;
@@ -78,15 +79,28 @@ namespace SpatialDebugger.Vision
         [SerializeField] private bool saveDebugImage = true;
 
         /// <summary>
-        /// The constrained classifier prompt used for the frozen demo targets.
+        /// A question, not an instruction — and deliberately NOT "answer with
+        /// one word".
         /// </summary>
         /// <remarks>
-        /// Parsing remains strict even though the prompt is constrained: prose,
-        /// unsupported objects and malformed answers do not become successes.
+        /// Measured against this exact Ollama and model, not guessed.
+        /// moondream is a 2024 VQA model (phi2, ~1.6B, temperature 0) whose
+        /// template is literally <c>Question: {prompt}\n\nAnswer:</c>, with no
+        /// instruction tuning. Consequences, all reproduced:
+        /// <list type="bullet">
+        /// <item>"Answer with one word." → the model emits EOS immediately and
+        /// returns an EMPTY string. That is the raw="" seen on device.</item>
+        /// <item>An instruction block listing examples → the literal token
+        /// "urn", deterministically, REGARDLESS OF THE IMAGE. The "urn"
+        /// observed on hardware was never a perception.</item>
+        /// <item>"Describe this image." → non-empty on every run tested, with
+        /// accurate content.</item>
+        /// </list>
+        /// So ask a natural question and let
+        /// <see cref="RecognitionText"/> pull the noun out of the sentence,
+        /// rather than fighting the model for a one-word answer it cannot give.
         /// </remarks>
-        private const string Prompt =
-            "Identify the main object at the center of the image. Choose exactly one of: " +
-            "laptop, table, chair, wall, unknown. Respond with only that word.";
+        private const string Prompt = "What is the main object in this image? Describe it.";
 
         private OllamaProvider _provider;
         private readonly Queue<PendingRequest> _queue = new Queue<PendingRequest>();
@@ -194,7 +208,7 @@ namespace SpatialDebugger.Vision
 
             if (_queue.Count >= Mathf.Max(1, maxQueued))
             {
-                Warn("queue full (" + _queue.Count + "); showing NOT RECOGNIZED for this pinch");
+                Warn("queue full (" + _queue.Count + "); using deterministic fallback for this pinch");
                 Finish(new RecognitionResult { Error = "queue full" }, onComplete);
                 return;
             }
@@ -347,20 +361,15 @@ namespace SpatialDebugger.Vision
                     (raw?.Length ?? 0) + " in " + elapsed.ToString("F1") + "s (" +
                     Describe(response) + ")");
 
-                var word = RecognitionText.Normalize(raw);
-                if (RecognitionText.IsRecognizedClass(word))
+                // Constrained to the four frozen demo classes. Anything else
+                // is reported as unrecognised rather than rounded to the
+                // nearest one, which would be inventing a result.
+                var word = RecognitionText.NormalizeToDemoClass(raw, Vocabulary.KnownWords);
+                if (!string.IsNullOrEmpty(word))
                 {
                     result.Word = word;
                     result.Error = null;
                     Log("normalized=\"" + word + "\"");
-                    break;
-                }
-
-                if (word == RecognitionText.Unknown)
-                {
-                    result.Word = word;
-                    result.Error = "model returned unknown or an unsupported response";
-                    Log("normalized=\"unknown\" (not a recognition success)");
                     break;
                 }
 
@@ -387,7 +396,7 @@ namespace SpatialDebugger.Vision
         {
             if (!result.Success)
             {
-                Warn("FAILED: " + result.Error + "; showing NOT RECOGNIZED");
+                Warn("FAILED: " + result.Error + "; using deterministic fallback");
             }
 
             try

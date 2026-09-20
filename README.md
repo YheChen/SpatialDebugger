@@ -1,6 +1,6 @@
 # SpatialDebugger
 
-**Point. Pinch. Learn — turn the room around you into a mixed-reality vocabulary lesson.**
+**Point. Pinch. Learn — local AI labels that stay with the real world.**
 
 SpatialDebugger is a Meta Quest 3 prototype that places English, French, and
 Spanish labels at selected points in a real room. The interaction is intentionally
@@ -14,11 +14,23 @@ Built at Hack the North 2026.
 | Status | Capability |
 |---|---|
 | **Verified on Quest 3** | Passthrough, stereo XR, 6DoF tracking, visible hands, pinch input, world-fixed annotations, multiple simultaneous labels, accented French/Spanish text, real non-black 1280×960 Quest RGB frames, and USB `adb reverse` networking |
-| **Verified on Quest 3** | End-to-end recognition: pinch-centred crop → JPEG → Ollama/Moondream → normalization → `ANALYZING…` replaced in place. Laptop, chair, desk, table, couch and person recognised; ~1.5–2.4 s warm. The pulled crop is correctly oriented and matches where the user pointed |
-| **Verified on Quest 3** | Environment-depth placement. A pinch resolves to a measured point on the real surface: 0.68, 0.70, 0.98, 1.06, 1.87 and 2.99 m observed in one session, most with `normalConfidence = 1.00` |
+| **Verified on Quest 3** | End-to-end recognition: pinch-centred crop → JPEG → Ollama/Moondream → normalization → `ANALYZING…` replaced in place; ~1.5–2.4 s warm. The pulled crop is correctly oriented and matches where the user pointed |
+| **Verified on Quest 3** | Four judge-facing vision targets: `laptop`, `table`, `chair`, and `wall`. `floor` and `ceiling` are normally settled as separate depth-derived labels from the normal and target height |
+| **Verified on Quest 3** | Environment-depth placement. A pinch resolves to a measured point on the real surface: 0.68, 0.70, 0.98, 1.06, 1.87, 2.99, and 3.54 m observed, most with `normalConfidence = 1.00` |
 | **Verified fallback** | A deterministic offline vocabulary cycle: CHAIR, LAPTOP, BOTTLE, and BACKPACK, with French and Spanish translations |
 
-Small objects such as water bottles are recognised less reliably than furniture.
+Recognition output is deliberately narrow. The four judge-facing camera targets
+are laptop, table, chair, and wall; a couch stays a couch and is not relabelled a
+chair. The allowlist also accepts floor and ceiling so a model answer can agree
+with geometry, but the demo normally settles those two from depth. A geometric
+result receives `DEPTH SURFACE` rather than `AI RECOGNIZED`.
+
+The constraint is applied to the model's reply, not asked for in the prompt.
+moondream is a 2024 VQA model with no instruction tuning: measured against a
+running Ollama at temperature 0, every constrained phrasing ("choose exactly one
+of…", "respond with only that word") returns an empty string or the literal
+token `urn`, on every image. Only the plain descriptive question answers
+reliably, so the classification is done deterministically in code.
 
 The deterministic vocabulary cycle is used only when the camera never becomes
 ready. A recognition that is *attempted and fails* now shows `NOT RECOGNIZED`
@@ -38,8 +50,8 @@ The reliable interaction is:
 
 When the vision path is available, the initial label reads `ANALYZING…`, a
 Quest camera crop is sent to a Mac-local Moondream model, and the same label is
-updated with the returned noun. Any failure falls back to the deterministic
-vocabulary rather than leaving the interaction broken.
+updated after the reply is constrained to the demo targets. A failed recognition
+shows `NOT RECOGNIZED`; it is never replaced with a convenient vocabulary word.
 
 See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the 60-second scripts, recording shot
 list, and pre-demo checklist.
@@ -67,9 +79,10 @@ flowchart LR
         C[Spatial target]
         D[PassthroughCameraAccess<br/>RGB frame]
         E[Place ANALYZING label]
-        H[Translation lookup]
+        H[Constrain result + translation lookup]
         I[Update world-space annotation]
         J[Deterministic vocabulary]
+        K[Depth-derived floor / ceiling]
     end
 
     subgraph M[Mac over USB]
@@ -82,8 +95,10 @@ flowchart LR
     C -->|project point into image| D
     D -->|crop + JPEG| F
     F --> G
-    G -->|object noun<br/>verification pending| H
-    J -->|camera/model failure| H
+    G -->|image description| H
+    C --> K
+    K -->|confident horizontal surface| H
+    J -->|camera unavailable before recognition| H
     H --> I
     E -. same label handle .-> I
     A --- I
@@ -105,7 +120,7 @@ optional reasoning and structured-annotation subsystem.
 - `CameraCapture` reads the GPU texture once per pinch and crops around the
   projected target.
 - `VisionRecognizer` calls Meta's `OllamaProvider` over `adb reverse` and
-  normalizes the answer to a noun.
+  constrains the descriptive answer to the frozen demo targets.
 - `SpatialActionDispatcher` renders or updates a world-space label. The local
   vocabulary supplies translations and the deterministic fallback.
 
@@ -167,9 +182,10 @@ The output is `Unity/Build/Android/SpatialDebugger.apk` (gitignored).
 ## Demo mode
 
 The fallback vocabulary is local and requires no camera, model, backend, API
-key, network, or internet. If camera or inference fails, each pinch resolves to
-the next deterministic entry. This path must be presented as a prepared
-vocabulary sequence, not recognition.
+key, network, or internet. It is used when the camera is unavailable before a
+recognition attempt starts. Once recognition is attempted, any failure displays
+`NOT RECOGNIZED`. The fallback must be presented as a prepared vocabulary
+sequence, not recognition.
 
 To force the fallback before a demo, remove the Ollama port mapping:
 
@@ -179,8 +195,7 @@ adb reverse --remove tcp:11434
 
 ## Vision mode
 
-Vision is implemented but remains an in-progress claim until physical
-end-to-end verification:
+The vision path has been physically verified end to end on Quest 3:
 
 ```bash
 ollama pull moondream
@@ -201,7 +216,7 @@ prototype needs the USB-connected Mac.
 
 ## Tests
 
-The latest implementation checkpoint records **118 Unity EditMode tests** and
+The latest implementation checkpoint records **164 Unity EditMode tests** and
 **54 backend tests** passing. Coverage includes response parsing, annotation
 placement and update-in-place behavior, vocabulary/font support, recognition
 normalization and error paths, API validation, and deterministic backend
@@ -226,9 +241,9 @@ Unity tests can be run from the Test Runner or in batch mode:
   depth.
 - Labels remain fixed during the current XR session, but are not saved as
   spatial anchors across app restarts.
-- Translation is a local vocabulary lookup. Unknown recognized nouns are shown
-  honestly with missing translations instead of being replaced with a known
-  word.
+- Translation is a local vocabulary lookup. Responses outside the constrained
+  demo targets are shown as `NOT RECOGNIZED` rather than being replaced with a
+  known word.
 - Recognition needs a USB-connected Mac running Ollama; it is not yet an
   entirely on-headset experience.
 - Environment depth needs the `USE_SCENE` permission, which is prompted for once

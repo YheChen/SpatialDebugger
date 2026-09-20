@@ -53,7 +53,73 @@ namespace SpatialDebugger.Demo
         [SerializeField] private VisionRecognizer recognizer;
 
         /// <summary>Shown while the model is thinking.</summary>
-        public const string AnalyzingLabel = "<size=150%>ANALYZING\u2026</size>\n\nFR  \u2014\nES  \u2014";
+        public const string AnalyzingLabel =
+            "<size=150%>ANALYZING\u2026</size>\n\nFR  \u2014\nES  \u2014" +
+            "\n<size=65%>ASKING THE MODEL\u2026</size>";
+
+        /// <summary>
+        /// Footer on a label the vision model genuinely produced. Never shown
+        /// for a failure or for the offline cycle.
+        /// </summary>
+        public const string RecognizedBadge = "AI RECOGNIZED";
+
+        /// <summary>Footer on a prepared card, so it cannot be mistaken for AI.</summary>
+        public const string OfflineBadge = "OFFLINE VOCABULARY";
+
+        /// <summary>Footer for a class the depth sensor settled, not the model.</summary>
+        public const string GeometricBadge = "DEPTH SURFACE";
+
+        /// <summary>
+        /// How flat a surface must be before geometry is allowed to name it.
+        /// </summary>
+        public const float HorizontalNormal = 0.85f;
+
+        /// <summary>At or below this height, a flat surface is the floor.</summary>
+        /// <remarks>
+        /// The tracking origin is floor level, so world Y is height above the
+        /// room's floor directly.
+        /// </remarks>
+        public const float FloorHeight = 0.35f;
+
+        /// <summary>At or above this height, a flat surface is the ceiling.</summary>
+        public const float CeilingHeight = 1.8f;
+
+        /// <summary>
+        /// Floor or ceiling from the depth normal, or null to leave it to the
+        /// model.
+        /// </summary>
+        /// <remarks>
+        /// The normal establishes only that the surface is <i>horizontal</i>,
+        /// using its absolute Y: the sensor is free to report either face, so
+        /// a floor can come back as -Y. Height is what says which horizontal
+        /// surface it is.
+        /// <para>
+        /// Height is not optional here. A table top has a normal just as
+        /// strongly vertical as a floor's, so naming floors from the normal
+        /// alone would rename every table in the demo. The band between the
+        /// two thresholds -- desk and table height -- deliberately returns
+        /// null and leaves the existing recognition path untouched.
+        /// </para>
+        /// </remarks>
+        public static string GeometricClass(Vector3 normal, float confidence, float height)
+        {
+            if (confidence < SurfaceOrientation.MinimumNormalConfidence) return null;
+            if (normal.sqrMagnitude < 1e-6f) return null;
+
+            if (Mathf.Abs(normal.normalized.y) < HorizontalNormal) return null;
+
+            if (height <= FloorHeight) return "floor";
+            if (height >= CeilingHeight) return "ceiling";
+
+            return null;
+        }
+
+        /// <summary>Separator between the badge and the measured distance.</summary>
+        /// <remarks>
+        /// U+00B7, not U+2022: the font atlas is a static Latin-1 set with no
+        /// fallback, and a bullet would render as nothing at all.
+        /// </remarks>
+        private const string BadgeSeparator = "  \u00B7  ";
 
         /// <summary>
         /// Shown when recognition was attempted and did not produce a word.
@@ -67,7 +133,26 @@ namespace SpatialDebugger.Demo
         /// reason for the failure goes to logcat, not to the label.
         /// </remarks>
         public const string UnrecognizedLabel =
-            "<size=150%>NOT RECOGNIZED</size>\n\nFR  \u2014\nES  \u2014";
+            "<size=150%>NOT RECOGNIZED</size>\n\nFR  \u2014\nES  \u2014" +
+            "\n<size=65%>NO ANSWER FROM THE MODEL</size>";
+
+        /// <summary>
+        /// The footer for a successful recognition: that it came from the
+        /// model, and how far away the raycast measured the surface.
+        /// </summary>
+        public static string RecognizedFooter(float metres)
+        {
+            return RecognizedBadge + BadgeSeparator + metres.ToString("F2") + " m";
+        }
+
+        /// <summary>
+        /// The footer for a class the depth sensor settled. Deliberately not
+        /// the AI badge: the model did not produce this word.
+        /// </summary>
+        public static string GeometricFooter(float metres)
+        {
+            return GeometricBadge + BadgeSeparator + metres.ToString("F2") + " m";
+        }
 
         /// <summary>How many annotations this component has placed.</summary>
         public int PlacedCount { get; private set; }
@@ -131,6 +216,7 @@ namespace SpatialDebugger.Demo
             labelAction.HasUpAxis = attachment.Oriented;
 
             if (useRecognition) labelAction.Text = AnalyzingLabel;
+            else labelAction.Text = fallback.ToLabel(OfflineBadge);
 
             // The HANDLE is what makes update-in-place possible. Captured per
             // pinch, so overlapping requests each rewrite their own label and
@@ -146,21 +232,43 @@ namespace SpatialDebugger.Demo
 
             if (!useRecognition || renderer == null) return;
 
+            // Captured now, from the raycast. Recomputing it later would
+            // measure the user's head, not the surface.
+            var metres = target.SelectionDistance;
+
+            // Floor and ceiling are geometry, not perception. Null for every
+            // other surface, which leaves the recognition path exactly as it
+            // was for the four classes that already work.
+            var geometric = GeometricClass(
+                target.SurfaceNormal, target.NormalConfidence, point.y);
+
             recognizer.Recognise(point, result =>
             {
                 // The annotation may have been cleared or budgeted away while
                 // the model was thinking.
                 if (renderer == null) return;
 
-                if (result != null && result.Success)
+                var word = result != null && result.Success ? result.Word : null;
+
+                // Geometry wins where it has an answer, but the badge follows
+                // whoever actually produced the word on screen.
+                var shown = geometric ?? word;
+
+                if (!string.IsNullOrEmpty(shown))
                 {
                     // A genuine recognition outside the dictionary is shown as
                     // itself with the translations marked absent -- never
                     // swapped for a deterministic word, which would be faking it.
-                    var entry = Vocabulary.LookupOrEcho(RecognitionText.ForDisplay(result.Word));
+                    var entry = Vocabulary.LookupOrEcho(RecognitionText.ForDisplay(shown));
+                    var fromModel = string.Equals(shown, word, System.StringComparison.Ordinal);
+
                     Debug.Log("[SpatialDebugger] annotation #" + placedIndex +
-                              " recognised as " + entry.English);
-                    renderer.SetText(entry.ToLabel());
+                              " resolved as " + entry.English +
+                              (fromModel ? " (model)" : " (depth geometry, model said " +
+                                                        (word ?? "nothing") + ")"));
+
+                    renderer.SetText(entry.ToLabel(
+                        fromModel ? RecognizedFooter(metres) : GeometricFooter(metres)));
                     return;
                 }
 

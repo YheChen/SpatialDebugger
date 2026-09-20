@@ -8,7 +8,7 @@
 
   <rect width="1600" height="900" fill="url(#bg)"/>
   <text x="70" y="76" font-family="Arial, Helvetica, sans-serif" font-size="43" font-weight="800" fill="#fff">FROM QUEST CAMERA TO SPATIAL LABEL</text>
-  <text x="72" y="114" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#b7d4e1">A selected camera crop goes to a local laptop model; the result returns to the same world-space card.</text>
+  <text x="72" y="114" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#b7d4e1">A selected crop goes to a local laptop model; code constrains the result before updating the same card.</text>
 
   <rect x="55" y="150" width="1070" height="630" rx="28" fill="url(#quest)" stroke="#5edcf7" stroke-opacity="0.5" stroke-width="2"/>
   <rect x="1145" y="150" width="400" height="630" rx="28" fill="url(#laptop)" stroke="#ffbf5a" stroke-opacity="0.7" stroke-width="2"/>
@@ -44,14 +44,14 @@
       <rect width="320" height="170" rx="20" fill="#3a2917" stroke="#ffc45e" stroke-width="2"/>
       <circle cx="40" cy="40" r="22" fill="#ffc45e"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#30200b">5</text>
       <text x="76" y="38" font-size="23" font-weight="800" fill="#fff">MOONDREAM</text><text x="76" y="67" font-size="23" font-weight="800" fill="#fff">THROUGH OLLAMA</text>
-      <text x="26" y="112" font-size="17" fill="#f4ddba">Runs locally on laptop</text><text x="26" y="138" font-size="17" fill="#f4ddba">No hosted vision API</text>
+      <text x="26" y="112" font-size="17" fill="#f4ddba">Runs locally on laptop</text><text x="26" y="138" font-size="17" fill="#f4ddba">Returns an image description</text>
     </g>
     <g transform="translate(1185 510)">
       <rect width="320" height="170" rx="20" fill="#3a2917" stroke="#ffc45e" stroke-width="2"/>
       <circle cx="40" cy="40" r="22" fill="#ffc45e"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#30200b">6</text>
-      <text x="76" y="38" font-size="21" font-weight="800" fill="#fff">STRICT CLASS</text>
-      <text x="26" y="85" font-size="17" fill="#f4ddba">laptop • table • chair</text><text x="26" y="111" font-size="17" fill="#f4ddba">wall • unknown</text>
-      <text x="26" y="142" font-size="15" fill="#d8bd91">Only the first four are successes</text>
+      <text x="76" y="38" font-size="21" font-weight="800" fill="#fff">CONSTRAINED RESULT</text>
+      <text x="26" y="85" font-size="17" fill="#f4ddba">vision: laptop • table</text><text x="26" y="111" font-size="17" fill="#f4ddba">chair • wall</text>
+      <text x="26" y="142" font-size="15" fill="#d8bd91">floor / ceiling normally from depth</text>
     </g>
     <g transform="translate(405 505)">
       <rect width="300" height="135" rx="20" fill="#123849" stroke="#7be9ff" stroke-width="2"/>
