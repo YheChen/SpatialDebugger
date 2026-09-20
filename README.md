@@ -53,9 +53,6 @@ Quest camera crop is sent to a Mac-local Moondream model, and the same label is
 updated after the reply is constrained to the demo targets. A failed recognition
 shows `NOT RECOGNIZED`; it is never replaced with a convenient vocabulary word.
 
-See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the 60-second scripts, recording shot
-list, and pre-demo checklist.
-
 ## What it does
 
 SpatialDebugger explores language learning as a spatial interaction instead of
@@ -259,10 +256,7 @@ Unity tests can be run from the Test Runner or in batch mode:
 - Persist labels across sessions with spatial anchors.
 - Move or package inference so the experience can run without a tethered Mac.
 
-## Submission material
+## Architecture
 
-- [DEVPOST.md](DEVPOST.md) — polished submission copy and short descriptions
-- [DEMO_SCRIPT.md](DEMO_SCRIPT.md) — primary/fallback scripts, shot list, and checklist
-- [JUDGING.md](JUDGING.md) — pitches, Q&A, and evidence-backed achievements
-- [PRIZE_TRACKS.md](PRIZE_TRACKS.md) — current track fit and paste-ready paragraphs
-- [ARCHITECTURE.md](ARCHITECTURE.md) — deeper notes on the reusable annotation system
+See [ARCHITECTURE.md](ARCHITECTURE.md) for deeper notes on the reusable
+annotation system.
