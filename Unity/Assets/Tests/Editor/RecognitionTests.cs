@@ -171,7 +171,7 @@ namespace SpatialDebugger.Tests
             StringAssert.Contains("ANALYZING", placeholder);
             StringAssert.Contains("<size=", placeholder);
             Assert.AreEqual(
-                Vocabulary.At(0).ToLabel().Split('\n').Length,
+                Vocabulary.At(0).ToLabel(PinchAnnotationPlacer.RecognizedBadge).Split('\n').Length,
                 placeholder.Split('\n').Length,
                 "placeholder should have the same number of lines as a real label");
         }
@@ -200,6 +200,81 @@ namespace SpatialDebugger.Tests
             Assert.AreEqual(
                 PinchAnnotationPlacer.AnalyzingLabel.Split('\n').Length,
                 PinchAnnotationPlacer.UnrecognizedLabel.Split('\n').Length);
+        }
+
+        [Test]
+        public void Only_a_real_recognition_claims_the_AI_badge()
+        {
+            var recognised = Vocabulary.Lookup("Chair")
+                .ToLabel(PinchAnnotationPlacer.RecognizedFooter(0.7f));
+
+            StringAssert.Contains(PinchAnnotationPlacer.RecognizedBadge, recognised);
+            StringAssert.Contains("0.70 m", recognised);
+
+            // The two states that must never claim it.
+            StringAssert.DoesNotContain(
+                PinchAnnotationPlacer.RecognizedBadge, PinchAnnotationPlacer.UnrecognizedLabel);
+            StringAssert.DoesNotContain(
+                PinchAnnotationPlacer.RecognizedBadge, PinchAnnotationPlacer.AnalyzingLabel);
+            StringAssert.DoesNotContain(
+                PinchAnnotationPlacer.RecognizedBadge,
+                Vocabulary.At(0).ToLabel(PinchAnnotationPlacer.OfflineBadge));
+        }
+
+        [Test]
+        public void An_offline_card_says_so()
+        {
+            var offline = Vocabulary.At(0).ToLabel(PinchAnnotationPlacer.OfflineBadge);
+            StringAssert.Contains("OFFLINE", offline);
+        }
+
+        [Test]
+        public void The_distance_is_formatted_to_two_places_in_metres()
+        {
+            StringAssert.Contains("0.70 m", PinchAnnotationPlacer.RecognizedFooter(0.7f));
+            StringAssert.Contains("2.99 m", PinchAnnotationPlacer.RecognizedFooter(2.9914f));
+        }
+
+        [Test]
+        public void Every_state_has_the_same_number_of_lines()
+        {
+            // The plate is sized from the line count, so a mismatch makes the
+            // annotation visibly jump when the answer lands.
+            var expected = Vocabulary.At(0).ToLabel(PinchAnnotationPlacer.RecognizedBadge)
+                .Split('\n').Length;
+
+            Assert.AreEqual(expected, PinchAnnotationPlacer.AnalyzingLabel.Split('\n').Length);
+            Assert.AreEqual(expected, PinchAnnotationPlacer.UnrecognizedLabel.Split('\n').Length);
+            Assert.AreEqual(expected, Vocabulary.At(0).ToLabel().Split('\n').Length);
+        }
+
+        [Test]
+        public void An_overlong_recognition_is_elided_rather_than_shown_whole()
+        {
+            var entry = Vocabulary.LookupOrEcho(
+                "a large comfortable upholstered sitting apparatus");
+
+            Assert.LessOrEqual(entry.English.Length, Vocabulary.MaximumWordLength);
+            StringAssert.EndsWith("\u2026", entry.English);
+        }
+
+        [Test]
+        public void The_demo_shortlist_is_all_translated()
+        {
+            var shortlist = new[]
+            {
+                "chair", "table", "desk", "laptop", "computer", "bottle", "phone",
+                "backpack", "couch", "person", "door", "wall", "floor", "ceiling",
+                "monitor", "keyboard", "mouse", "cup", "book", "window"
+            };
+
+            foreach (var word in shortlist)
+            {
+                var entry = Vocabulary.Lookup(word);
+                Assert.IsNotNull(entry, word + " has no translation");
+                Assert.AreNotEqual("\u2014", entry.French, word + " has no French");
+                Assert.AreNotEqual("\u2014", entry.Spanish, word + " has no Spanish");
+            }
         }
 
         [Test]

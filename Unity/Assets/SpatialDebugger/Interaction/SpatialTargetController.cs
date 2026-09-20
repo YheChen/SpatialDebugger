@@ -232,6 +232,7 @@ namespace SpatialDebugger.Interaction
             target.transform.position = hit.Point;
             target.SurfaceNormal = hit.Normal;
             target.NormalConfidence = hit.NormalConfidence;
+            target.SelectionDistance = hit.Distance;
             target.SelectedBy = SourceToOrigin(hit.Source);
             target.Label = DescribeTarget(hit);
 

@@ -53,7 +53,25 @@ namespace SpatialDebugger.Demo
         [SerializeField] private VisionRecognizer recognizer;
 
         /// <summary>Shown while the model is thinking.</summary>
-        public const string AnalyzingLabel = "<size=150%>ANALYZING\u2026</size>\n\nFR  \u2014\nES  \u2014";
+        public const string AnalyzingLabel =
+            "<size=150%>ANALYZING\u2026</size>\n\nFR  \u2014\nES  \u2014" +
+            "\n<size=65%>ASKING THE MODEL\u2026</size>";
+
+        /// <summary>
+        /// Footer on a label the vision model genuinely produced. Never shown
+        /// for a failure or for the offline cycle.
+        /// </summary>
+        public const string RecognizedBadge = "AI RECOGNIZED";
+
+        /// <summary>Footer on a prepared card, so it cannot be mistaken for AI.</summary>
+        public const string OfflineBadge = "OFFLINE VOCABULARY";
+
+        /// <summary>Separator between the badge and the measured distance.</summary>
+        /// <remarks>
+        /// U+00B7, not U+2022: the font atlas is a static Latin-1 set with no
+        /// fallback, and a bullet would render as nothing at all.
+        /// </remarks>
+        private const string BadgeSeparator = "  \u00B7  ";
 
         /// <summary>
         /// Shown when recognition was attempted and did not produce a word.
@@ -67,7 +85,17 @@ namespace SpatialDebugger.Demo
         /// reason for the failure goes to logcat, not to the label.
         /// </remarks>
         public const string UnrecognizedLabel =
-            "<size=150%>NOT RECOGNIZED</size>\n\nFR  \u2014\nES  \u2014";
+            "<size=150%>NOT RECOGNIZED</size>\n\nFR  \u2014\nES  \u2014" +
+            "\n<size=65%>NO ANSWER FROM THE MODEL</size>";
+
+        /// <summary>
+        /// The footer for a successful recognition: that it came from the
+        /// model, and how far away the raycast measured the surface.
+        /// </summary>
+        public static string RecognizedFooter(float metres)
+        {
+            return RecognizedBadge + BadgeSeparator + metres.ToString("F2") + " m";
+        }
 
         /// <summary>How many annotations this component has placed.</summary>
         public int PlacedCount { get; private set; }
@@ -131,6 +159,7 @@ namespace SpatialDebugger.Demo
             labelAction.HasUpAxis = attachment.Oriented;
 
             if (useRecognition) labelAction.Text = AnalyzingLabel;
+            else labelAction.Text = fallback.ToLabel(OfflineBadge);
 
             // The HANDLE is what makes update-in-place possible. Captured per
             // pinch, so overlapping requests each rewrite their own label and
@@ -146,6 +175,10 @@ namespace SpatialDebugger.Demo
 
             if (!useRecognition || renderer == null) return;
 
+            // Captured now, from the raycast. Recomputing it later would
+            // measure the user's head, not the surface.
+            var metres = target.SelectionDistance;
+
             recognizer.Recognise(point, result =>
             {
                 // The annotation may have been cleared or budgeted away while
@@ -160,7 +193,7 @@ namespace SpatialDebugger.Demo
                     var entry = Vocabulary.LookupOrEcho(RecognitionText.ForDisplay(result.Word));
                     Debug.Log("[SpatialDebugger] annotation #" + placedIndex +
                               " recognised as " + entry.English);
-                    renderer.SetText(entry.ToLabel());
+                    renderer.SetText(entry.ToLabel(RecognizedFooter(metres)));
                     return;
                 }
 

@@ -34,6 +34,24 @@ namespace SpatialDebugger.Core
             set => normalConfidence = value;
         }
 
+        [Tooltip("Metres from the pointing ray's origin to this point, as the " +
+                 "raycast measured it. Zero when unknown.")]
+        [SerializeField] private float selectionDistance;
+
+        /// <summary>
+        /// How far away the raycast said this point was, in metres.
+        /// </summary>
+        /// <remarks>
+        /// Recorded at selection, not recomputed. A label showing "0.70 m"
+        /// must mean the measured depth at the moment of the pinch, not the
+        /// distance from wherever the user's head has since wandered.
+        /// </remarks>
+        public float SelectionDistance
+        {
+            get => selectionDistance;
+            set => selectionDistance = value;
+        }
+
         /// <summary>Where annotations get parented. Always this transform.</summary>
         public Transform AnnotationRoot => transform;
 

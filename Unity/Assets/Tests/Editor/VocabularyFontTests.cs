@@ -29,9 +29,13 @@ namespace SpatialDebugger.Tests
             var font = TMPro.TMP_Settings.defaultFontAsset;
             Assert.IsNotNull(font, "no default font asset");
 
-            foreach (var entry in Vocabulary.Cycle)
+            // Every entry, not just the four in the cycle: the extra table is
+            // what a real recognition is looked up against, so those labels
+            // reach the headset too and were never font-checked.
+            foreach (var entry in Vocabulary.All)
             {
-                var visible = SpatialText.StripRichText(entry.ToLabel());
+                var visible = SpatialText.StripRichText(
+                    entry.ToLabel(Demo.PinchAnnotationPlacer.RecognizedFooter(0.7f)));
 
                 foreach (var character in visible)
                 {
