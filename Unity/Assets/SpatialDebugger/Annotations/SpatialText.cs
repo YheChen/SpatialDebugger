@@ -188,9 +188,11 @@ namespace SpatialDebugger.Annotations
 
             if (IsTextMeshProAvailable)
             {
-                // TMP authors in its own units; 3.2 reads well at this scale.
-                label.BuildTmp(content, 3.2f, color, align);
-                go.transform.localScale = Vector3.one * (worldHeight / 0.028f * 0.012f);
+                const float fontSize = 3.2f;
+                label.BuildTmp(content, fontSize, color, align);
+
+                // Scale so the CAP HEIGHT comes out at worldHeight metres.
+                go.transform.localScale = Vector3.one * (worldHeight / CapHeightPerUnit(fontSize));
             }
             else
             {
@@ -201,6 +203,44 @@ namespace SpatialDebugger.Annotations
             }
 
             return label;
+        }
+
+        /// <summary>
+        /// Cap height, in local units, that a <see cref="TMPro.TextMeshPro"/> at
+        /// <paramref name="fontSize"/> actually renders before any scaling.
+        /// </summary>
+        /// <remarks>
+        /// TMP does not author at "1 unit = 1 metre". The rendered cap height is
+        /// <c>fontSize * (capLine / pointSize) * 0.1</c> in the font's own
+        /// metrics — for LiberationSans SDF that is
+        /// <c>3.2 * 59/86 * 0.1 = 0.2195</c>, not the ~0.43 an earlier guess
+        /// assumed. Getting this wrong by a factor of ten is what made every
+        /// label and every button caption render as unreadably small text on
+        /// device. Read it from the font asset so a different default font
+        /// cannot silently reintroduce the bug.
+        /// </remarks>
+        private static float CapHeightPerUnit(float fontSize)
+        {
+            const float liberationSansFallback = 0.21953f; // 3.2 * 59/86 * 0.1
+
+            try
+            {
+                var font = TMPro.TMP_Settings.defaultFontAsset;
+                if (font != null)
+                {
+                    var face = font.faceInfo;
+                    if (face.pointSize > 0f && face.capLine > 0f)
+                    {
+                        return fontSize * (face.capLine / face.pointSize) * 0.1f;
+                    }
+                }
+            }
+            catch (System.Exception)
+            {
+                // Fall through to the measured default.
+            }
+
+            return liberationSansFallback * (fontSize / 3.2f);
         }
 
         /// <summary>Approximate world width of a rendered string, for sizing backing panels.</summary>

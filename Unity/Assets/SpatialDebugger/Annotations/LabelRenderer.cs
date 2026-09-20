@@ -58,7 +58,9 @@ namespace SpatialDebugger.Annotations
                 new Vector3(width + 0.02f * scale, 0.004f * scale, 1f),
                 AnnotationVisuals.Opaque(color));
 
-            SpatialText.Create(plate.transform, text, height * 0.55f, Color.white);
+            // height covers every line; the cap height of one line is what
+            // SpatialText needs.
+            SpatialText.Create(plate.transform, text, height / lines * 0.55f, Color.white);
         }
     }
 }
