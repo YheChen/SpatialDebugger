@@ -361,7 +361,10 @@ namespace SpatialDebugger.Vision
                     (raw?.Length ?? 0) + " in " + elapsed.ToString("F1") + "s (" +
                     Describe(response) + ")");
 
-                var word = RecognitionText.Normalize(raw, Vocabulary.KnownWords);
+                // Constrained to the four frozen demo classes. Anything else
+                // is reported as unrecognised rather than rounded to the
+                // nearest one, which would be inventing a result.
+                var word = RecognitionText.NormalizeToDemoClass(raw, Vocabulary.KnownWords);
                 if (!string.IsNullOrEmpty(word))
                 {
                     result.Word = word;

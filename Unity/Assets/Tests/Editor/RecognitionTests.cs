@@ -277,6 +277,100 @@ namespace SpatialDebugger.Tests
             }
         }
 
+        // -- the four frozen demo classes ------------------------------------
+
+        [Test]
+        public void Each_demo_class_is_recognised_from_a_descriptive_reply()
+        {
+            var replies = new[]
+            {
+                new[] { "The main object in this image is a laptop.", "laptop" },
+                new[] { "The main object in this image is a wooden table.", "table" },
+                new[] { "The main object in the image is a chair.", "chair" },
+                new[] { "The main object in this image is a white wall.", "wall" },
+            };
+
+            foreach (var pair in replies)
+            {
+                Assert.AreEqual(pair[1],
+                    RecognitionText.NormalizeToDemoClass(pair[0], Vocabulary.KnownWords),
+                    pair[0]);
+            }
+        }
+
+        [Test]
+        public void Observed_synonyms_map_onto_a_demo_class()
+        {
+            Assert.AreEqual("table", RecognitionText.ToDemoClass("desk"));
+            Assert.AreEqual("chair", RecognitionText.ToDemoClass("stool"));
+            Assert.AreEqual("laptop", RecognitionText.ToDemoClass("computer"));
+            Assert.AreEqual("wall", RecognitionText.ToDemoClass("walls"));
+        }
+
+        [Test]
+        public void Anything_outside_the_four_classes_is_unknown()
+        {
+            // The regression this guards is the tempting one: rounding a couch
+            // to a chair so the demo always shows something.
+            foreach (var outside in new[]
+                     {
+                         "The main object in this image is a couch, which is situated in a room.",
+                         "The main object in this image is the Golden Gate Bridge.",
+                         "The main object in the image is a small cartoon character.",
+                         "urn", "", "   ", null
+                     })
+            {
+                Assert.IsNull(RecognitionText.NormalizeToDemoClass(outside, Vocabulary.KnownWords),
+                    "should be unknown: " + (outside ?? "null"));
+            }
+        }
+
+        [Test]
+        public void A_class_word_wins_over_the_adjective_in_front_of_it()
+        {
+            Assert.AreEqual("chair",
+                RecognitionText.NormalizeToDemoClass(
+                    "The main object is a large comfortable wooden chair.",
+                    Vocabulary.KnownWords));
+        }
+
+        [Test]
+        public void Every_demo_class_has_the_agreed_translations()
+        {
+            var expected = new[]
+            {
+                new[] { "laptop", "ordinateur portable", "portátil" },
+                new[] { "table", "table", "mesa" },
+                new[] { "chair", "chaise", "silla" },
+                new[] { "wall", "mur", "pared" },
+            };
+
+            foreach (var row in expected)
+            {
+                var entry = Vocabulary.Lookup(row[0]);
+                Assert.IsNotNull(entry, row[0] + " is not in the vocabulary");
+                Assert.AreEqual(row[1], entry.French, row[0] + " French");
+                Assert.AreEqual(row[2], entry.Spanish, row[0] + " Spanish");
+            }
+        }
+
+        [Test]
+        public void Every_demo_class_survives_the_whole_display_path()
+        {
+            // normalize -> title case -> vocabulary -> label, the way the
+            // placer does it, so a class cannot pass normalisation and then
+            // lose its translations.
+            foreach (var demoClass in RecognitionText.DemoClasses)
+            {
+                var entry = Vocabulary.LookupOrEcho(RecognitionText.ForDisplay(demoClass));
+                var label = entry.ToLabel(PinchAnnotationPlacer.RecognizedFooter(0.7f));
+
+                StringAssert.Contains(demoClass.ToUpperInvariant(), label);
+                StringAssert.DoesNotContain("\u2014", label, demoClass + " lost a translation");
+                StringAssert.Contains(PinchAnnotationPlacer.RecognizedBadge, label);
+            }
+        }
+
         [Test]
         public void Every_character_of_the_failure_label_is_in_the_font_atlas()
         {
