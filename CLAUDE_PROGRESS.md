@@ -8,31 +8,30 @@ a headset, because no headset was attached.
 
 ## Physical Quest 3 — VERIFIED ON HARDWARE
 
-Confirmed by running it on the device, not inferred:
+The full pinch-to-annotate demo is confirmed working on the device. Every item
+below was seen on hardware, not inferred:
 
 - **Passthrough** — real room visible (`CompositorVR: Passthrough usage state
-  changed: app 1` in logcat, i.e. the app itself is requesting it)
+  changed: app 1`, i.e. the app itself is requesting it)
 - **XR session** — `UNKNOWN -> IDLE -> READY -> xrBeginSession -> SYNCHRONIZED`
-- **Head rotation / stereo rendering**
+- **Stereo rendering and head rotation**
+- **Positional 6DoF tracking** — annotations stay locked to a real-world spot
+  when the user moves
 - **Hand tracking** — hands visible, index pinch registers
-- **Pinch-to-annotate** — pinching a spot produces a world annotation reading
+- **Pinch-to-annotate** — pinching a spot places a world annotation reading
   `OBJECT / French: objet / Spanish: objeto`, legible in passthrough
-- **Debug panel hidden** — clean demo view
+- **Multiple annotations coexist** — each pinch adds one; previous ones persist
+- **Clean demo view** — debug panel hidden
 
-Still NOT verified on hardware:
+### On the earlier "no positional tracking" report
 
-- **Positional (6DoF) parallax.** The config was audited and is correct
-  (`FloorLevel` origin, `usePositionTracking: 1`,
-  `allowOptional3DofHeadTracking: 0`, `headtracking` required in the manifest,
-  position from `XRNodeState.TryGetPosition`), but no defect-free test has been
-  run. The earlier attempt was inconclusive by construction: the panel was
-  head-locked and the reticle hand-locked, so neither could ever show parallax.
-  Correct test: pinch once onto a real edge, lower your hand, do **not** pinch
-  again, then sidestep ~0.5 m and crouch ~0.3 m. The annotation should stay
-  glued to the real edge.
-- **Multiple coexisting annotations.** Each pinch is dispatched in world space
-  under the dispatcher root, so previous annotations should persist, but four
-  at once has not been seen on device.
+That was **an inconclusive test, not a defect**. The control panel was
+head-locked and the reticle hand-locked, so neither could ever show parallax,
+and the only world-fixed object was re-placed on every pinch. The configuration
+audit (`FloorLevel` origin, `usePositionTracking: 1`,
+`allowOptional3DofHeadTracking: 0`, `headtracking` required in the manifest,
+position from `XRNodeState.TryGetPosition`) concluded no change was needed, and
+hardware has now confirmed that. No 6DoF code or settings were ever changed.
 
 ## Earlier device test — problems found and fixed
 
