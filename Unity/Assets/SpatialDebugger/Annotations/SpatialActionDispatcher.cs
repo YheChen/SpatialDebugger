@@ -134,7 +134,14 @@ namespace SpatialDebugger.Annotations
             host.transform.localPosition = action.Type == SpatialActionType.Arrow
                 ? action.From
                 : action.Position;
-            host.transform.localRotation = Quaternion.identity;
+            // The one place a surface normal turns into geometry. Renderers
+            // build along local +Y, so rotating the host tips the marker's
+            // stalk and ring, and the label's leader, onto the real surface.
+            // The caption plate is unaffected: its Billboard overwrites world
+            // rotation every LateUpdate, so the text cannot be tipped edge-on.
+            host.transform.localRotation = action.HasUpAxis
+                ? Core.SurfaceOrientation.Rotation(action.UpAxis)
+                : Quaternion.identity;
 
             var renderer = AddRenderer(host, action.Type);
             if (renderer == null)

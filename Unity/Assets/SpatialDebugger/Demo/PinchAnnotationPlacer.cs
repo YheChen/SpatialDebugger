@@ -97,11 +97,24 @@ namespace SpatialDebugger.Demo
             // will move on the next pinch, the annotation must not.
             var point = target.transform.position;
 
+            // Surface attachment, resolved in one place. A low-confidence
+            // normal changes nothing at all -- not the position, not the
+            // orientation -- so the known-good presentation survives whenever
+            // the sensor is unsure. A depth point is never rejected for having
+            // a poor normal; the distance is measured separately and was the
+            // point of the whole exercise.
+            var viewer = Camera.main;
+            var attachment = SurfaceOrientation.For(
+                point, target.SurfaceNormal, target.NormalConfidence,
+                viewer != null ? viewer.transform.position : point);
+
             if (dropMarker)
             {
-                var marker = SpatialAction.Marker(point);
+                var marker = SpatialAction.Marker(attachment.Anchor);
                 marker.Space = SpatialSpace.World;
                 marker.Scale = labelScale;
+                marker.UpAxis = attachment.MarkerUp;
+                marker.HasUpAxis = attachment.Oriented;
                 dispatcher.Dispatch(marker);
             }
 
@@ -113,7 +126,9 @@ namespace SpatialDebugger.Demo
             // Place something at the pinched point immediately, either way.
             // Nothing waits on the network before the user sees a result.
             var labelAction = PinchDemo.SpatialActionForPinch(
-                index, point + Vector3.up * labelLift, labelScale);
+                index, attachment.Anchor + attachment.LabelUp * labelLift, labelScale);
+            labelAction.UpAxis = attachment.LabelUp;
+            labelAction.HasUpAxis = attachment.Oriented;
 
             if (useRecognition) labelAction.Text = AnalyzingLabel;
 
@@ -126,7 +141,8 @@ namespace SpatialDebugger.Demo
             var placedIndex = PlacedCount;
 
             Debug.Log("[SpatialDebugger] placed annotation #" + placedIndex + " (" +
-                      (useRecognition ? "analyzing" : fallback.English) + ") at " + point);
+                      (useRecognition ? "analyzing" : fallback.English) + ") at " + point +
+                      " surface=" + SurfaceOrientation.Describe(attachment.Surface));
 
             if (!useRecognition || renderer == null) return;
 

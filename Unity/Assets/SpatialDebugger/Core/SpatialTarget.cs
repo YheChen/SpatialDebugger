@@ -20,6 +20,20 @@ namespace SpatialDebugger.Core
         [Tooltip("Surface normal at the point that was selected, if known.")]
         [SerializeField] private Vector3 surfaceNormal = Vector3.up;
 
+        [Tooltip("How much to trust surfaceNormal, in [0,1]. Only the depth " +
+                 "sensor reports this; everything else leaves it at 0.")]
+        [SerializeField] private float normalConfidence;
+
+        /// <summary>
+        /// Confidence in <see cref="SurfaceNormal"/>, in [0,1]. Zero means the
+        /// normal is a placeholder, not a measurement.
+        /// </summary>
+        public float NormalConfidence
+        {
+            get => normalConfidence;
+            set => normalConfidence = value;
+        }
+
         /// <summary>Where annotations get parented. Always this transform.</summary>
         public Transform AnnotationRoot => transform;
 

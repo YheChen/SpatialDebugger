@@ -231,6 +231,7 @@ namespace SpatialDebugger.Interaction
 
             target.transform.position = hit.Point;
             target.SurfaceNormal = hit.Normal;
+            target.NormalConfidence = hit.NormalConfidence;
             target.SelectedBy = SourceToOrigin(hit.Source);
             target.Label = DescribeTarget(hit);
 
@@ -290,8 +291,14 @@ namespace SpatialDebugger.Interaction
             switch (hit.Source)
             {
                 case SpatialHit.HitSource.EnvironmentDepth:
+                    // The surface kind is what makes an orientation bug legible
+                    // from the log alone: a wall that reports "horizontal" is a
+                    // normal problem, not a rendering one.
                     return "depth hit distance=" + distance + " " + point +
-                           " normalConfidence=" + hit.NormalConfidence.ToString("F2");
+                           " normal=" + hit.Normal.ToString("F2") +
+                           " confidence=" + hit.NormalConfidence.ToString("F2") +
+                           " surface=" + Core.SurfaceOrientation.Describe(
+                               Core.SurfaceOrientation.Classify(hit.Normal, hit.NormalConfidence));
 
                 case SpatialHit.HitSource.SceneSurface:
                     return "MRUK scene hit distance=" + distance + " " + point;

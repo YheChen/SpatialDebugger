@@ -65,6 +65,21 @@ namespace SpatialDebugger.Core
 
         public float Scale = 1f;
 
+        /// <summary>
+        /// Which way local +Y points for this annotation, in the same space as
+        /// <see cref="Position"/>. Left unset, annotations stand up along world
+        /// up exactly as they always have.
+        /// </summary>
+        /// <remarks>
+        /// This is how a surface normal reaches the renderers. It is an "up
+        /// axis" rather than a "normal" because the two are not always the same
+        /// thing: a marker wants to stand out of the surface, while a label's
+        /// leader wants to run along it. See <see cref="SurfaceOrientation"/>.
+        /// </remarks>
+        public Vector3 UpAxis = Vector3.up;
+
+        public bool HasUpAxis;
+
         public float Radius = 0.04f;
         public bool HasRadius;
 
