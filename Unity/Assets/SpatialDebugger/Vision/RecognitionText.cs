@@ -116,7 +116,8 @@ namespace SpatialDebugger.Vision
         /// The four classes the demo is frozen around, plus the honest
         /// alternative.
         /// </summary>
-        public static readonly string[] DemoClasses = { "laptop", "table", "chair", "wall" };
+        public static readonly string[] DemoClasses =
+            { "laptop", "table", "chair", "wall", "floor", "ceiling" };
 
         /// <summary>
         /// Tight synonym table. Every entry is a word this model has actually
@@ -148,6 +149,13 @@ namespace SpatialDebugger.Vision
                 { "seat", "chair" }, { "stool", "chair" }, { "armchair", "chair" },
 
                 { "wall", "wall" }, { "walls", "wall" },
+
+                // Floor and ceiling are normally settled by geometry before the
+                // model is consulted; these are here so that a reply which does
+                // name them agrees with the geometric answer instead of
+                // falling through to unknown.
+                { "floor", "floor" }, { "floors", "floor" }, { "ground", "floor" },
+                { "ceiling", "ceiling" }, { "ceilings", "ceiling" },
             };
 
         /// <summary>

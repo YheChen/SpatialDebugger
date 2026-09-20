@@ -3,6 +3,7 @@ using NUnit.Framework;
 using SpatialDebugger.Annotations;
 using SpatialDebugger.Demo;
 using SpatialDebugger.Vision;
+using UnityEngine;
 
 namespace SpatialDebugger.Tests
 {
@@ -368,6 +369,126 @@ namespace SpatialDebugger.Tests
                 StringAssert.Contains(demoClass.ToUpperInvariant(), label);
                 StringAssert.DoesNotContain("\u2014", label, demoClass + " lost a translation");
                 StringAssert.Contains(PinchAnnotationPlacer.RecognizedBadge, label);
+            }
+        }
+
+        // -- floor and ceiling, decided by geometry ---------------------------
+
+        private const float Sure = 1f;
+
+        [Test]
+        public void A_flat_surface_at_the_users_feet_is_the_floor()
+        {
+            Assert.AreEqual("floor",
+                PinchAnnotationPlacer.GeometricClass(Vector3.up, Sure, 0.02f));
+        }
+
+        [Test]
+        public void A_flat_surface_overhead_is_the_ceiling()
+        {
+            Assert.AreEqual("ceiling",
+                PinchAnnotationPlacer.GeometricClass(Vector3.down, Sure, 2.45f));
+        }
+
+        [Test]
+        public void Either_face_of_a_horizontal_surface_gives_the_same_answer()
+        {
+            // The sensor is free to report either side, so horizontality is
+            // taken from the absolute Y and height decides which surface it is.
+            Assert.AreEqual("floor",
+                PinchAnnotationPlacer.GeometricClass(Vector3.down, Sure, 0.02f));
+            Assert.AreEqual("ceiling",
+                PinchAnnotationPlacer.GeometricClass(Vector3.up, Sure, 2.45f));
+        }
+
+        [Test]
+        public void A_vertical_wall_is_never_overridden()
+        {
+            foreach (var height in new[] { 0.1f, 1.0f, 2.4f })
+            {
+                Assert.IsNull(
+                    PinchAnnotationPlacer.GeometricClass(Vector3.forward, Sure, height),
+                    "a wall at " + height + "m must be left to the model");
+                Assert.IsNull(
+                    PinchAnnotationPlacer.GeometricClass(Vector3.right, Sure, height));
+            }
+        }
+
+        [Test]
+        public void A_table_top_is_left_to_the_model()
+        {
+            // The regression this guards: a table has a normal every bit as
+            // vertical as the floor's, so naming floors from the normal alone
+            // would rename every table in the demo.
+            foreach (var height in new[] { 0.45f, 0.74f, 1.1f })
+            {
+                Assert.IsNull(
+                    PinchAnnotationPlacer.GeometricClass(Vector3.up, Sure, height),
+                    "a table top at " + height + "m must be left to the model");
+            }
+        }
+
+        [Test]
+        public void A_low_confidence_normal_never_overrides_the_model()
+        {
+            Assert.IsNull(PinchAnnotationPlacer.GeometricClass(Vector3.up, 0f, 0.02f));
+            Assert.IsNull(PinchAnnotationPlacer.GeometricClass(Vector3.down, 0.2f, 2.45f));
+        }
+
+        [Test]
+        public void An_absent_normal_never_overrides_the_model()
+        {
+            Assert.IsNull(PinchAnnotationPlacer.GeometricClass(Vector3.zero, Sure, 0.02f));
+        }
+
+        [Test]
+        public void A_surface_tilted_past_the_threshold_is_left_to_the_model()
+        {
+            // 45 degrees: |y| is 0.71, below the 0.85 the override demands.
+            var tilted = (Vector3.up + Vector3.forward).normalized;
+            Assert.IsNull(PinchAnnotationPlacer.GeometricClass(tilted, Sure, 0.02f));
+        }
+
+        [Test]
+        public void Floor_and_ceiling_are_demo_classes_with_the_agreed_translations()
+        {
+            CollectionAssert.Contains(RecognitionText.DemoClasses, "floor");
+            CollectionAssert.Contains(RecognitionText.DemoClasses, "ceiling");
+
+            var floor = Vocabulary.Lookup("floor");
+            Assert.AreEqual("sol", floor.French);
+            Assert.AreEqual("suelo", floor.Spanish);
+
+            var ceiling = Vocabulary.Lookup("ceiling");
+            Assert.AreEqual("plafond", ceiling.French);
+            Assert.AreEqual("techo", ceiling.Spanish);
+        }
+
+        [Test]
+        public void A_model_reply_naming_the_floor_still_classifies()
+        {
+            Assert.AreEqual("floor", RecognitionText.NormalizeToDemoClass(
+                "The main object in this image is a wooden floor.", Vocabulary.KnownWords));
+            Assert.AreEqual("ceiling", RecognitionText.NormalizeToDemoClass(
+                "The main object in this image is a white ceiling.", Vocabulary.KnownWords));
+        }
+
+        [Test]
+        public void A_geometric_answer_does_not_claim_the_AI_badge()
+        {
+            var geometric = PinchAnnotationPlacer.GeometricFooter(0.7f);
+
+            StringAssert.DoesNotContain(PinchAnnotationPlacer.RecognizedBadge, geometric);
+            StringAssert.Contains("0.70 m", geometric);
+        }
+
+        [Test]
+        public void The_four_original_classes_are_untouched()
+        {
+            foreach (var word in new[] { "laptop", "table", "chair", "wall" })
+            {
+                CollectionAssert.Contains(RecognitionText.DemoClasses, word);
+                Assert.AreEqual(word, RecognitionText.ToDemoClass(word));
             }
         }
 
