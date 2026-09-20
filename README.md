@@ -14,11 +14,21 @@ Built at Hack the North 2026.
 | Status | Capability |
 |---|---|
 | **Verified on Quest 3** | Passthrough, stereo XR, 6DoF tracking, visible hands, pinch input, world-fixed annotations, multiple simultaneous labels, accented French/Spanish text, real non-black 1280×960 Quest RGB frames, and USB `adb reverse` networking |
-| **Verified on Quest 3** | End-to-end recognition: pinch-centred crop → JPEG → Ollama/Moondream → normalization → `ANALYZING…` replaced in place. Laptop, chair, desk, table, couch and person recognised; ~1.5–2.4 s warm. The pulled crop is correctly oriented and matches where the user pointed |
+| **Verified on Quest 3** | End-to-end recognition: pinch-centred crop → JPEG → Ollama/Moondream → normalization → `ANALYZING…` replaced in place; ~1.5–2.4 s warm. The pulled crop is correctly oriented and matches where the user pointed |
+| **Verified on Quest 3** | The six frozen demo classes. `laptop`, `table`, `chair` and `wall` come from the vision model; `floor` and `ceiling` are settled geometrically from the depth normal and the height above the floor |
 | **Verified on Quest 3** | Environment-depth placement. A pinch resolves to a measured point on the real surface: 0.68, 0.70, 0.98, 1.06, 1.87 and 2.99 m observed in one session, most with `normalConfidence = 1.00` |
 | **Verified fallback** | A deterministic offline vocabulary cycle: CHAIR, LAPTOP, BOTTLE, and BACKPACK, with French and Spanish translations |
 
-Small objects such as water bottles are recognised less reliably than furniture.
+Recognition is frozen to six classes for the demo. Anything else is reported as
+`NOT RECOGNIZED` rather than rounded to the nearest one — a couch stays a couch
+and is not relabelled a chair.
+
+The constraint is applied to the model's reply, not asked for in the prompt.
+moondream is a 2024 VQA model with no instruction tuning: measured against a
+running Ollama at temperature 0, every constrained phrasing ("choose exactly one
+of…", "respond with only that word") returns an empty string or the literal
+token `urn`, on every image. Only the plain descriptive question answers
+reliably, so the classification is done deterministically in code.
 
 The deterministic vocabulary cycle is used only when the camera never becomes
 ready. A recognition that is *attempted and fails* now shows `NOT RECOGNIZED`
