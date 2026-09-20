@@ -71,6 +71,42 @@ namespace SpatialDebugger.Tests
             Assert.IsNull(N("!!!"));
         }
 
+        // -- description-shaped replies -------------------------------------
+        // The prompt is now a question, because moondream returns an EMPTY
+        // string for "answer with one word" and a deterministic junk token for
+        // instruction blocks. So the normaliser must mine a sentence.
+
+        [Test]
+        public void The_noun_after_is_a_is_extracted()
+        {
+            Assert.AreEqual("chair", N("The main object in this image is a chair."));
+            Assert.AreEqual("laptop", N("The main object in this image is a laptop."));
+            Assert.AreEqual("table", N("This is an image of a table."));
+        }
+
+        [Test]
+        public void An_adjective_does_not_win_over_the_noun()
+        {
+            Assert.AreEqual("chair", N("The main object is a wooden chair."));
+            Assert.AreEqual("bottle", N("It is a clear plastic bottle."));
+        }
+
+        [Test]
+        public void Narration_verbs_are_not_mistaken_for_the_object()
+        {
+            // Without the noise list these would normalise to "main" or "shows".
+            Assert.AreEqual("backpack", N("The image shows a backpack on the floor."));
+            Assert.AreEqual("cup", N("This picture features a cup."));
+        }
+
+        [Test]
+        public void A_long_caption_still_yields_the_object()
+        {
+            Assert.AreEqual("table",
+                N("The main object in this image is a coffee table, positioned in the "
+                  + "center of the living room with a couch behind it."));
+        }
+
         [Test]
         public void Display_casing_capitalises()
         {

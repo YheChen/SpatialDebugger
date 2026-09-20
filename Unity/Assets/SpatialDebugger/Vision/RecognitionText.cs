@@ -18,6 +18,12 @@ namespace SpatialDebugger.Vision
             "a", "an", "the", "this", "that", "is", "it", "its", "there",
             "i", "see", "im", "seeing", "looks", "like", "appears", "to", "be",
             "of", "in", "on", "at", "image", "picture", "photo", "object", "likely",
+            // A description prompt narrates before it names. Without these the
+            // first "real" token is a verb: "The main object in this image is a
+            // chair" would normalise to "main".
+            "main", "depicts", "presents", "features", "shows", "displays",
+            "scene", "view", "rendering", "contains", "centre", "center", "middle",
+            "foreground", "background", "appears", "visible", "sitting", "standing",
         };
 
         /// <summary>
@@ -44,6 +50,41 @@ namespace SpatialDebugger.Vision
                 .Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
 
             if (tokens.Length == 0) return null;
+
+            // "The main object in this image is a chair." -- the noun follows
+            // "is a"/"is an". A description prompt produces this shape
+            // reliably, so look for it before falling back to scanning.
+            for (var i = 0; i < tokens.Length - 1; i++)
+            {
+                if (tokens[i] != "is") continue;
+
+                var next = i + 1;
+                if (next < tokens.Length && (tokens[next] == "a" || tokens[next] == "an")) next++;
+
+                // Skip adjectives only if they are filler we already know.
+                while (next < tokens.Length && Noise.Contains(tokens[next])) next++;
+
+                if (next < tokens.Length && tokens[next].Length > 1)
+                {
+                    // Prefer a known word later in the phrase ("is a wooden
+                    // chair" -> chair, not wooden).
+                    if (known != null)
+                    {
+                        var vocabulary = new HashSet<string>();
+                        foreach (var word in known)
+                        {
+                            if (!string.IsNullOrWhiteSpace(word)) vocabulary.Add(word.ToLowerInvariant());
+                        }
+
+                        for (var j = next; j < tokens.Length && j < next + 4; j++)
+                        {
+                            if (vocabulary.Contains(tokens[j])) return tokens[j];
+                        }
+                    }
+
+                    return tokens[next];
+                }
+            }
 
             // A known word anywhere in the reply beats positional guessing.
             if (known != null)

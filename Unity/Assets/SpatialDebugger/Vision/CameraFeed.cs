@@ -368,24 +368,74 @@ namespace SpatialDebugger.Vision
 
         /// <summary>
         /// Projects a world point into the camera image (0..1, bottom-left
-        /// origin), so a crop can follow what the user pointed at.
+        /// origin). Returns false when the point is not actually in shot.
         /// </summary>
-        public bool TryGetViewportPoint(Vector3 worldPoint, out Vector2 viewportPoint)
+        /// <param name="detail">Human-readable explanation, for the log.</param>
+        /// <remarks>
+        /// <see cref="PassthroughCameraAccess.WorldToViewportPoint"/> divides by
+        /// the target's camera-space z with no sign or magnitude guard, so a
+        /// point BEHIND the camera projects to a mirrored, meaningless
+        /// coordinate rather than failing. That is how a viewport y of 1.41
+        /// gets logged. The depth test has to happen here, before trusting the
+        /// result — clamping the output would hide the problem, not fix it.
+        /// </remarks>
+        public bool TryGetViewportPoint(Vector3 worldPoint, out Vector2 viewportPoint,
+            out string detail)
         {
+            viewportPoint = new Vector2(0.5f, 0.5f);
+            detail = "camera not ready";
+
+            if (_access == null || !_access.IsPlaying) return false;
+
             try
             {
-                if (_access != null && _access.IsPlaying)
+                var pose = _access.GetCameraPose();
+
+                // Same transform the SDK does internally, so we can inspect the
+                // depth it does not check.
+                var local = Quaternion.Inverse(pose.rotation) * (worldPoint - pose.position);
+
+                if (local.z <= MinimumDepth)
                 {
-                    viewportPoint = _access.WorldToViewportPoint(worldPoint);
-                    return true;
+                    detail = "behind or too close to the camera (z=" +
+                             local.z.ToString("F2") + "m)";
+                    return false;
                 }
+
+                var projected = _access.WorldToViewportPoint(worldPoint, pose);
+
+                if (projected.x < 0f || projected.x > 1f || projected.y < 0f || projected.y > 1f)
+                {
+                    detail = "outside the image (" + projected.x.ToString("F2") + "," +
+                             projected.y.ToString("F2") + "), z=" + local.z.ToString("F2") + "m";
+                    return false;
+                }
+
+                viewportPoint = projected;
+                detail = "z=" + local.z.ToString("F2") + "m";
+                return true;
             }
             catch (Exception exception)
             {
+                detail = "projection threw: " + exception.Message;
                 Fail("WorldToViewportPoint threw: " + exception.Message);
+                return false;
+            }
+        }
+
+        /// <summary>Nearer than this and the projection is meaningless.</summary>
+        private const float MinimumDepth = 0.05f;
+
+        /// <summary>The camera pose right now, for logging.</summary>
+        public bool TryGetPosition(out Vector3 position)
+        {
+            if (TryGetCameraPose(out var pose))
+            {
+                position = pose.position;
+                return true;
             }
 
-            viewportPoint = new Vector2(0.5f, 0.5f);
+            position = Vector3.zero;
             return false;
         }
 
