@@ -217,6 +217,11 @@ namespace SpatialDebugger.Interaction
         /// <summary>Places the target at a hit. Public so the UI can re-place it.</summary>
         public void PlaceTarget(SpatialHit hit)
         {
+            // One line per selection, never per frame. This is how a physical
+            // tester tells a label that genuinely landed on a surface from one
+            // that only looks right because the fallback happened to agree.
+            Debug.Log(TargetTag + DescribeHitForLog(hit));
+
             if (target == null)
             {
                 var go = new GameObject("SpatialTarget");
@@ -266,10 +271,51 @@ namespace SpatialDebugger.Interaction
             });
         }
 
+        private const string TargetTag = "[SpatialDebugger][target] ";
+
+        /// <summary>
+        /// Which tier resolved this placement, and at what distance.
+        /// </summary>
+        /// <remarks>
+        /// When nothing real was hit the line also carries the depth sensor's
+        /// own reason, straight from <c>EnvironmentRaycastHitStatus</c> -- the
+        /// difference between "depth is switched off" and "you pointed at
+        /// something the depth camera cannot see" is otherwise invisible.
+        /// </remarks>
+        private string DescribeHitForLog(SpatialHit hit)
+        {
+            var distance = hit.Distance.ToString("F2") + "m";
+            var point = "point=" + hit.Point.ToString("F2");
+
+            switch (hit.Source)
+            {
+                case SpatialHit.HitSource.EnvironmentDepth:
+                    return "depth hit distance=" + distance + " " + point +
+                           " normalConfidence=" + hit.NormalConfidence.ToString("F2");
+
+                case SpatialHit.HitSource.SceneSurface:
+                    return "MRUK scene hit distance=" + distance + " " + point;
+
+                case SpatialHit.HitSource.Physics:
+                    return "physics hit distance=" + distance + " " + point +
+                           " collider=" + (hit.Collider != null ? hit.Collider.name : "unnamed");
+
+                default:
+                    return "fallback distance=" + distance + " " + point +
+                           " (depth: " + DepthStatus() + ")";
+            }
+        }
+
+        private string DepthStatus()
+        {
+            return raycaster != null ? raycaster.SurfaceProbe.LastDepthStatus : "no raycaster";
+        }
+
         private static SpatialTarget.Origin SourceToOrigin(SpatialHit.HitSource source)
         {
             switch (source)
             {
+                case SpatialHit.HitSource.EnvironmentDepth:
                 case SpatialHit.HitSource.SceneSurface: return SpatialTarget.Origin.SceneSurface;
                 case SpatialHit.HitSource.Physics: return SpatialTarget.Origin.HandRay;
                 default: return SpatialTarget.Origin.Fallback;
@@ -280,6 +326,7 @@ namespace SpatialDebugger.Interaction
         {
             switch (hit.Source)
             {
+                case SpatialHit.HitSource.EnvironmentDepth:
                 case SpatialHit.HitSource.SceneSurface: return "Point on a real surface";
                 case SpatialHit.HitSource.Physics:
                     return hit.Collider != null ? hit.Collider.name : "Point on an object";

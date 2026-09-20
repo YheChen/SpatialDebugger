@@ -316,6 +316,15 @@ namespace SpatialDebugger.EditorTools
             SetReference(recognizer, "cameraFeed", feed);
             log.Add("camera feed + vision recognizer (deterministic if camera or Ollama unavailable)");
 
+            // Environment depth, on its own object for the same reason: it
+            // creates Meta's EnvironmentRaycastManager at runtime once OVRPlugin
+            // is up and USE_SCENE has been granted, and can be switched off
+            // without disturbing the placement chain underneath it.
+            var depth = new GameObject("EnvironmentDepth");
+            depth.transform.SetParent(systems.transform, false);
+            depth.AddComponent<EnvironmentDepthSource>();
+            log.Add("environment depth source (real surface distance; falls back to physics then 1.5m)");
+
             var sources = new GameObject("PointerSources");
             sources.transform.SetParent(systems.transform, false);
             sources.AddComponent<MetaHandPointerSource>();
