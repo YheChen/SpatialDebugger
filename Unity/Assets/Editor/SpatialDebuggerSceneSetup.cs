@@ -375,10 +375,18 @@ namespace SpatialDebugger.EditorTools
 
         // -- build settings ------------------------------------------------
 
+        /// <summary>
+        /// Makes the generated scene scene 0, and drops the stock URP template
+        /// scene.
+        /// </summary>
+        /// <remarks>
+        /// SampleScene being left in the list is what let a build ship the
+        /// template scene instead of this one.
+        /// </remarks>
         private static void AddToBuildSettings()
         {
             var scenes = EditorBuildSettings.scenes.ToList();
-            scenes.RemoveAll(s => s.path == ScenePath);
+            scenes.RemoveAll(s => s.path == ScenePath || s.path == "Assets/Scenes/SampleScene.unity");
             scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }

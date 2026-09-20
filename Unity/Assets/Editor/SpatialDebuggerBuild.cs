@@ -51,27 +51,8 @@ namespace SpatialDebugger.EditorTools
 
         private static BuildReport Build(string output)
         {
-            var scenes = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-
-            if (scenes.Length == 0)
-            {
-                // Fall back to the generated scene rather than building an
-                // empty player that looks like it worked.
-                if (File.Exists(SpatialDebuggerSceneSetup.ScenePath))
-                {
-                    scenes = new[] { SpatialDebuggerSceneSetup.ScenePath };
-                }
-                else
-                {
-                    Debug.LogError("[SpatialDebugger] no scenes in build settings and " +
-                                   SpatialDebuggerSceneSetup.ScenePath + " does not exist. " +
-                                   "Run Tools > SpatialDebugger > 2. Build MR Scene first.");
-                    return null;
-                }
-            }
+            var scenes = ResolveScenes();
+            if (scenes == null) return null;
 
             // BuildPipeline does not reliably create missing parent folders.
             var directory = Path.GetDirectoryName(Path.GetFullPath(output));
@@ -131,6 +112,51 @@ namespace SpatialDebugger.EditorTools
             }
 
             return report;
+        }
+
+        /// <summary>
+        /// The scenes to build, with the generated MR scene guaranteed first.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately does NOT trust <see cref="EditorBuildSettings.scenes"/>.
+        /// A Unity Editor left open on the project writes its in-memory build
+        /// list back over ProjectSettings, which is exactly how an APK once
+        /// shipped containing only the stock URP <c>SampleScene</c>: XR started
+        /// correctly, but the headset showed a flat grey-floor/blue-sky template
+        /// scene with no camera rig, no passthrough and no hand tracking —
+        /// while the build log said "building ... from 1 scene(s)".
+        /// <para>
+        /// The generated scene is the application. If it is missing, that is a
+        /// hard error, not something to paper over.
+        /// </para>
+        /// </remarks>
+        private static string[] ResolveScenes()
+        {
+            var generated = SpatialDebuggerSceneSetup.ScenePath;
+
+            if (!File.Exists(generated))
+            {
+                Debug.LogError("[SpatialDebugger] " + generated + " does not exist. " +
+                               "Run Tools > SpatialDebugger > 2. Build MR Scene first.");
+                return null;
+            }
+
+            var others = EditorBuildSettings.scenes
+                .Where(scene => scene.enabled)
+                .Select(scene => scene.path)
+                .Where(path => path != generated && File.Exists(path))
+                .ToArray();
+
+            var scenes = new[] { generated }.Concat(others).ToArray();
+
+            if (others.Length > 0)
+            {
+                Debug.LogWarning("[SpatialDebugger] build settings also list " +
+                                 string.Join(", ", others) +
+                                 ". Forcing " + generated + " to scene 0 so it is what launches.");
+            }
+
+            return scenes;
         }
 
         private static string ArgumentValue(string name)

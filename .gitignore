@@ -39,6 +39,14 @@ Unity/*.aab
 build/
 dist/
 
+# Unity writes an IL2CPP symbol/assembly backup next to every player build.
+# It is hundreds of megabytes and must never be committed. The name depends on
+# the product name and on where the Build Profile points, so match the suffix.
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+# A Windows-style build path typed into the Build dialog lands as a literal
+# colon-separated folder name inside Unity/.
+Unity/*:Builds:*
+
 # --- macOS / editors ----------------------------------------------------
 .DS_Store
 .idea/
