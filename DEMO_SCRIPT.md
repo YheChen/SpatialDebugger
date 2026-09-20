@@ -36,17 +36,27 @@ not recognition.
 | 15–24s | Move sideways to create visible parallax. | “This is the verified spatial interaction: the card stays fixed in the room as I move.” |
 | 24–35s | Pinch at a second location; show the next prepared vocabulary card. | “The demo sequence is deterministic—not recognition—so it needs no camera model, server, API key, or internet.” |
 | 35–45s | Pull back to show both labels simultaneously. | “Multiple labels coexist, turning the environment into a multilingual memory map.” |
-| 45–52s | End on the room and labels. | “The vision path is our next validation step; the learning interaction already works today.” |
+| 45–52s | End on the room and labels. | “Recognition is verified and working; this script is the offline vocabulary mode, chosen deliberately.” |
 
-To make the fallback path fail fast rather than wait for inference, remove the
-USB port mapping before launch:
+This script needs `offlineVocabularyMode` ticked on `PinchAnnotationPlacer`
+(on `SpatialDebuggerSystems` in the scene) and a rebuild. It is a deliberate,
+before-you-go-on-stage choice, and it is the *only* way to get prepared
+vocabulary cards.
 
-```bash
-adb reverse --remove tcp:11434
-```
+Removing the USB port mapping no longer produces this script. Since recognition
+is physically verified, a recognition that is attempted and fails now shows
+`NOT RECOGNIZED` instead of borrowing a word from the cycle — a failed model
+must not look like a successful one to a judge.
 
-Run through the fallback once before judging and confirm the label resolves
-quickly on the exact APK being demonstrated.
+So if the model goes quiet mid-demo, do not improvise around it. Say so:
+
+> "That is the model failing to answer, not a canned result — the card tells you
+> the truth either way."
+
+Then re-pinch. Warm inference has been measured at 1.5–2.4 s.
+
+Run through whichever script you have chosen once before judging, on the exact
+APK being demonstrated.
 
 ## Devpost video shot list
 

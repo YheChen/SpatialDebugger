@@ -1,11 +1,13 @@
 # SpatialDebugger — overnight progress
 
 > **Historical snapshot:** This file records the 2026-09-19 build state and is
-> intentionally preserved as an engineering handoff. Camera access and a local
-> recognition route were implemented afterward. See [README.md](README.md) for
-> the current verified / implemented / in-progress status. In particular, real
-> object recognition still must not be claimed until its full physical Quest
-> test succeeds.
+> intentionally preserved as an engineering handoff. It is deliberately *not*
+> kept up to date — see [README.md](README.md) for current status.
+>
+> Superseded since: real object recognition and environment-depth placement were
+> both implemented afterward and are now **physically verified on Quest 3**.
+> Where this file says recognition is not implemented, or that placement is a
+> fixed 1.5 m projection, it is describing the 2026-09-19 state, not today's.
 
 Written 2026-09-19, overnight. Everything below is either **verified by an
 actual run** or explicitly marked as not verified. Nothing is claimed to work on

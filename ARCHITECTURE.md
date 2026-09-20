@@ -148,9 +148,13 @@ pipeline can be exercised in Play mode on a Mac with no headset.
 
 `SpatialRaycaster` resolves a ray to a point in three tiers:
 
-1. **Meta depth / MRUK surfaces** — real geometry. Optional; see below.
-2. **Unity physics colliders.**
-3. **A projected point at a fixed distance** — so pointing at empty space still
+1. **Meta environment depth** — the Quest depth sensor, via
+   `EnvironmentRaycastManager`. Needs no Space Setup and no room scan. This is
+   the tier that puts a label on the actual chair. *Physically verified on
+   Quest 3.*
+2. **MRUK scene surfaces** — real captured geometry. Off by default; see below.
+3. **Unity physics colliders.**
+4. **A projected point at a fixed distance** — so pointing at empty space still
    places a target. This tier is why targeting cannot fail.
 
 ### Why the UI is not a Canvas
@@ -234,9 +238,20 @@ enabled. The supported camera route is `PassthroughCameraAccess`; passthrough
 itself is compositor output and cannot be captured with `WebCamTexture` or a
 normal Unity framebuffer grab.
 
-Surface-accurate depth remains future work. The current interaction first uses
-available scene/physics hits and otherwise places a target 1.5 m along the hand
-ray. That fixed distance is a reliable fallback, not a depth measurement.
+Surface-accurate depth is implemented and physically verified. A pinch resolves
+through `EnvironmentRaycastManager` to a measured point on the real surface;
+logcat has shown distances of 0.68, 0.70, 0.98, 1.06, 1.87 and 2.99 m in one
+session, most with `normalConfidence = 1.00`. The 1.5 m projection is still
+there underneath and still guarantees that placement never stops working.
+
+`EnvironmentDepthSource` owns the manager's lifecycle. It is created at runtime
+rather than serialised into the scene because
+`EnvironmentRaycastManager.IsSupported` caches its answer in a `static` for the
+whole process, and the manager's own `Awake` is what evaluates it — asked before
+OVRPlugin is initialised, it pins depth to "unsupported" for the entire session.
+The component waits for `OVRPlugin.initialized`, asks once, requests
+`com.oculus.permission.USE_SCENE` itself (the manager's provider waits for that
+permission but never requests it), and only then adds the component.
 
 ## Deliberate trade-offs
 

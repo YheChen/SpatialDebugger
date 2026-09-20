@@ -14,8 +14,13 @@ namespace SpatialDebugger.Tests
     /// -- <c>EnvironmentRaycastManager.IsSupported</c> is false off-headset --
     /// so the real sensor is stubbed out at the probe seam. What is verified is
     /// the part that lives in this repo and can silently regress: which tier
-    /// wins, and that the fallback still catches everything. Whether the sensor
-    /// returns a sane point is a physical test, not this.
+    /// wins, and that the fallback still catches everything.
+    /// <para>
+    /// The sensor itself was verified separately, on a Quest 3: one session
+    /// produced hits at 0.68, 0.70, 0.98, 1.06, 1.87 and 2.99 m, most with
+    /// <c>normalConfidence = 1.00</c>. That is a physical result and cannot be
+    /// re-established here.
+    /// </para>
     /// </remarks>
     public class SpatialRaycasterTests
     {

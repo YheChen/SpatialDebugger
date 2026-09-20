@@ -106,13 +106,17 @@ recognition route needs a Mac over USB, but after Moondream is installed it does
 not need internet or cloud inference. So it is network-independent, not yet a
 fully standalone headset experience.
 
-### Why use a fixed 1.5 m depth?
+### How is the label placed at the right distance?
 
-It is a targeting fallback, not an estimate of object distance. If no scene or
-physics surface is available, projecting 1.5 m along the hand ray guarantees
-that a pinch still creates a stable target at a comfortable scale. The next
-step is to use scene/depth geometry for surface-accurate placement while
-retaining the fallback.
+The pinch ray is resolved against the Quest depth sensor through Meta's
+`EnvironmentRaycastManager`, so the point is measured off the real surface — no
+room scan and no Space Setup required. Verified on Quest 3 across distances from
+0.68 m to 2.99 m in a single session.
+
+The 1.5 m projection is still there as the last tier. If depth, MRUK and physics
+all decline, a pinch still creates a stable target rather than doing nothing.
+Which tier answered is logged per pinch, so a measured hit is never confused
+with a fallback that happened to look right.
 
 ### How is this different from pointing a phone camera at something?
 
@@ -215,7 +219,9 @@ the physical thing it describes.
 - “Recognition works on Quest” until the owner confirms the physical result.
 - “On-device AI” — inference currently runs on a Mac.
 - “Persistent anchors” — labels are stable only during the current session.
-- “Depth-aware placement” — 1.5 m is a fallback distance, not measured depth.
+- “Persistent depth mesh” or “room reconstruction” — placement is a per-pinch
+  depth raycast, not a saved model of the room. Depth-aware placement itself is
+  verified and fair to claim.
 - “Fully offline recognition” — it is cloud-free after setup, but Mac-tethered.
 - Accuracy, latency, frame rate, or learning-impact numbers that were not
   measured.

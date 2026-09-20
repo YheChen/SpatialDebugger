@@ -98,8 +98,9 @@ is still in physical testing.
 
 We built the headset client in Unity 6 with Meta XR SDK 205, OpenXR, hand
 tracking, URP, and TextMeshPro. A hand pointer produces a ray and an index pinch
-commits the selection. Scene or physics hits are used when available; a 1.5 m
-projected target guarantees that the interaction still succeeds in empty
+commits the selection. The ray is resolved against the Quest depth sensor, so
+the label lands on the real surface at its real distance; physics and a 1.5 m
+projected target sit underneath so the interaction still succeeds in empty
 space. Each selected point is copied into session world coordinates so later
 pinches do not move earlier annotations.
 

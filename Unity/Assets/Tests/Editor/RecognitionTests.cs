@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using SpatialDebugger.Annotations;
 using SpatialDebugger.Demo;
 using SpatialDebugger.Vision;
 
@@ -173,6 +174,51 @@ namespace SpatialDebugger.Tests
                 Vocabulary.At(0).ToLabel().Split('\n').Length,
                 placeholder.Split('\n').Length,
                 "placeholder should have the same number of lines as a real label");
+        }
+
+        [Test]
+        public void A_failed_recognition_does_not_borrow_a_vocabulary_word()
+        {
+            // The regression this guards: a failed recognition used to be
+            // replaced by the next word in the deterministic cycle, which on
+            // stage looks exactly like a successful one.
+            var failed = PinchAnnotationPlacer.UnrecognizedLabel;
+
+            foreach (var entry in Vocabulary.Cycle)
+            {
+                StringAssert.DoesNotContain(entry.English.ToUpperInvariant(), failed);
+            }
+
+            StringAssert.Contains("NOT RECOGNIZED", failed);
+        }
+
+        [Test]
+        public void The_unrecognized_label_is_shaped_like_a_finished_label()
+        {
+            // Same line count, so the plate does not jump when ANALYZING is
+            // replaced by the failure.
+            Assert.AreEqual(
+                PinchAnnotationPlacer.AnalyzingLabel.Split('\n').Length,
+                PinchAnnotationPlacer.UnrecognizedLabel.Split('\n').Length);
+        }
+
+        [Test]
+        public void Every_character_of_the_failure_label_is_in_the_font_atlas()
+        {
+            // The em dashes are the risk here: the atlas is static Latin-1, and
+            // a missing glyph renders as nothing at all, silently, on device.
+            var font = TMPro.TMP_Settings.defaultFontAsset;
+            Assert.IsNotNull(font, "no default font asset");
+
+            var visible = SpatialText.StripRichText(PinchAnnotationPlacer.UnrecognizedLabel);
+            foreach (var character in visible)
+            {
+                if (char.IsWhiteSpace(character)) continue;
+
+                Assert.IsTrue(font.HasCharacter(character),
+                    string.Format("'{0}' (U+{1:X4}) in the failure label is not in the atlas",
+                        character, (int)character));
+            }
         }
     }
 }

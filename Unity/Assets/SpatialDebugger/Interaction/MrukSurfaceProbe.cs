@@ -45,13 +45,23 @@ namespace SpatialDebugger.Interaction
         /// <summary>Set once a depth raycast has genuinely returned a Hit.</summary>
         private bool _depthEverHit;
 
+        private EnvironmentRaycastHitStatus? _lastDepthStatus;
+        private string _lastDepthNote = "not attempted";
+
         /// <summary>
         /// Why the last depth raycast did or did not produce a point, straight
         /// from <see cref="EnvironmentRaycastHitStatus"/>. For diagnostics: it
         /// is the difference between "depth is off" and "you pointed at a
         /// surface the depth camera cannot see".
         /// </summary>
-        public string LastDepthStatus { get; private set; } = "not attempted";
+        /// <remarks>
+        /// Stored as the enum and stringified only when read. A raycast happens
+        /// every frame and <c>Enum.ToString</c> allocates, so formatting it
+        /// eagerly would put a fresh string on the heap 72 times a second for
+        /// a line that is only ever logged once per pinch.
+        /// </remarks>
+        public string LastDepthStatus =>
+            _lastDepthStatus.HasValue ? _lastDepthStatus.Value.ToString() : _lastDepthNote;
 
         /// <summary>True when either Meta source can answer a query right now.</summary>
         public virtual bool IsAvailable => DepthUsable || RoomAvailable;
@@ -145,7 +155,8 @@ namespace SpatialDebugger.Interaction
 
             if (!DepthUsable)
             {
-                LastDepthStatus = "no EnvironmentRaycastManager";
+                _lastDepthStatus = null;
+                _lastDepthNote = "no EnvironmentRaycastManager";
                 return false;
             }
 
@@ -155,7 +166,7 @@ namespace SpatialDebugger.Interaction
             // Raycast returns true exactly when status is Hit, so reading the
             // status instead of the bool changes nothing except the diagnostics.
             _depth.Raycast(ray, out var depthHit, maxDistance);
-            LastDepthStatus = depthHit.status.ToString();
+            _lastDepthStatus = depthHit.status;
 
             if (depthHit.status != EnvironmentRaycastHitStatus.Hit) return false;
 

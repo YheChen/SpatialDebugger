@@ -41,6 +41,12 @@ namespace SpatialDebugger.Demo
 
         [SerializeField] private bool dropMarker = true;
 
+        [Tooltip("Skip recognition entirely and show prepared vocabulary cards. " +
+                 "This is the DEMO_SCRIPT fallback demo, and it is a deliberate " +
+                 "choice made before going on stage -- never something the app " +
+                 "slides into because the model went quiet.")]
+        [SerializeField] private bool offlineVocabularyMode;
+
         [Tooltip("When present and the camera is ready, the label starts as " +
                  "ANALYZING and is rewritten with the recognised object. " +
                  "Absent or not ready, the deterministic cycle is used.")]
@@ -48,6 +54,20 @@ namespace SpatialDebugger.Demo
 
         /// <summary>Shown while the model is thinking.</summary>
         public const string AnalyzingLabel = "<size=150%>ANALYZING\u2026</size>\n\nFR  \u2014\nES  \u2014";
+
+        /// <summary>
+        /// Shown when recognition was attempted and did not produce a word.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately not a vocabulary word. A failed recognition used to be
+        /// replaced by the next entry in the deterministic cycle, which on
+        /// stage is indistinguishable from a successful one -- the model goes
+        /// down and the demo keeps confidently naming objects it never saw.
+        /// An honest blank is worth more than a plausible invention. The
+        /// reason for the failure goes to logcat, not to the label.
+        /// </remarks>
+        public const string UnrecognizedLabel =
+            "<size=150%>NOT RECOGNIZED</size>\n\nFR  \u2014\nES  \u2014";
 
         /// <summary>How many annotations this component has placed.</summary>
         public int PlacedCount { get; private set; }
@@ -87,7 +107,8 @@ namespace SpatialDebugger.Demo
 
             var index = cycleVocabulary ? PlacedCount : 0;
             var fallback = Vocabulary.At(index);
-            var useRecognition = recognizer != null && recognizer.CameraReady;
+            var useRecognition = !offlineVocabularyMode &&
+                                 recognizer != null && recognizer.CameraReady;
 
             // Place something at the pinched point immediately, either way.
             // Nothing waits on the network before the user sees a result.
@@ -115,24 +136,25 @@ namespace SpatialDebugger.Demo
                 // the model was thinking.
                 if (renderer == null) return;
 
-                VocabularyEntry entry;
                 if (result != null && result.Success)
                 {
                     // A genuine recognition outside the dictionary is shown as
                     // itself with the translations marked absent -- never
                     // swapped for a deterministic word, which would be faking it.
-                    entry = Vocabulary.LookupOrEcho(RecognitionText.ForDisplay(result.Word));
+                    var entry = Vocabulary.LookupOrEcho(RecognitionText.ForDisplay(result.Word));
                     Debug.Log("[SpatialDebugger] annotation #" + placedIndex +
                               " recognised as " + entry.English);
-                }
-                else
-                {
-                    entry = fallback;
-                    Debug.Log("[SpatialDebugger] annotation #" + placedIndex +
-                              " fell back to " + entry.English);
+                    renderer.SetText(entry.ToLabel());
+                    return;
                 }
 
-                renderer.SetText(entry.ToLabel());
+                // Attempted and failed. Say so, and say why in the log.
+                Debug.LogWarning("[SpatialDebugger] annotation #" + placedIndex +
+                                 " not recognised: " +
+                                 (result != null && !string.IsNullOrEmpty(result.Error)
+                                     ? result.Error
+                                     : "no result"));
+                renderer.SetText(UnrecognizedLabel);
             });
         }
     }

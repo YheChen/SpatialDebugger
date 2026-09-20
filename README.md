@@ -14,12 +14,16 @@ Built at Hack the North 2026.
 | Status | Capability |
 |---|---|
 | **Verified on Quest 3** | Passthrough, stereo XR, 6DoF tracking, visible hands, pinch input, world-fixed annotations, multiple simultaneous labels, accented French/Spanish text, real non-black 1280×960 Quest RGB frames, and USB `adb reverse` networking |
-| **Implemented; physical end-to-end verification pending** | Pinch-centred frame crop, JPEG capture, Ollama/Moondream request, response normalization, and in-place replacement of `ANALYZING…` with the resulting label |
+| **Verified on Quest 3** | End-to-end recognition: pinch-centred crop → JPEG → Ollama/Moondream → normalization → `ANALYZING…` replaced in place. Laptop, chair, desk, table, couch and person recognised; ~1.5–2.4 s warm. The pulled crop is correctly oriented and matches where the user pointed |
+| **Verified on Quest 3** | Environment-depth placement. A pinch resolves to a measured point on the real surface: 0.68, 0.70, 0.98, 1.06, 1.87 and 2.99 m observed in one session, most with `normalConfidence = 1.00` |
 | **Verified fallback** | A deterministic offline vocabulary cycle: CHAIR, LAPTOP, BOTTLE, and BACKPACK, with French and Spanish translations |
 
-The deterministic mode is a fallback, not object recognition. Do not describe
-the vision path as working on Quest until its full camera-to-model-to-label flow
-has been physically verified.
+Small objects such as water bottles are recognised less reliably than furniture.
+
+The deterministic vocabulary cycle is used only when the camera never becomes
+ready. A recognition that is *attempted and fails* now shows `NOT RECOGNIZED`
+rather than borrowing a word from the cycle — a plausible invention is worse on
+stage than an honest blank.
 
 ## Demo
 
@@ -91,8 +95,9 @@ optional reasoning and structured-annotation subsystem.
 ## Interaction flow
 
 - `MetaHandPointerSource` reads the tracked hand pointer and index pinch.
-- `SpatialRaycaster` uses a scene/physics hit when available, then guarantees a
-  target by falling back to a point 1.5 m along the hand ray.
+- `SpatialRaycaster` resolves the ray against Meta environment depth first, so
+  the target lands on the real surface; then MRUK geometry, then physics, then
+  a guaranteed point 1.5 m along the hand ray.
 - `PinchAnnotationPlacer` snapshots the target's world position so later
   pinches do not move earlier labels.
 - `CameraFeed` uses Meta `PassthroughCameraAccess`, including headset-camera
@@ -196,7 +201,7 @@ prototype needs the USB-connected Mac.
 
 ## Tests
 
-The latest implementation checkpoint records **104 Unity EditMode tests** and
+The latest implementation checkpoint records **118 Unity EditMode tests** and
 **54 backend tests** passing. Coverage includes response parsing, annotation
 placement and update-in-place behavior, vocabulary/font support, recognition
 normalization and error paths, API validation, and deterministic backend
@@ -216,9 +221,8 @@ Unity tests can be run from the Test Runner or in batch mode:
 
 ## Known limitations
 
-- End-to-end Moondream recognition has not yet been declared physically
-  verified on Quest 3.
-- The 1.5 m fallback is a guaranteed placement distance, not measured object
+- The 1.5 m projection is a guaranteed placement distance, used only when the
+  depth sensor, MRUK and physics all decline. Ordinary placement is measured
   depth.
 - Labels remain fixed during the current XR session, but are not saved as
   spatial anchors across app restarts.
@@ -227,12 +231,14 @@ Unity tests can be run from the Test Runner or in batch mode:
   word.
 - Recognition needs a USB-connected Mac running Ollama; it is not yet an
   entirely on-headset experience.
+- Environment depth needs the `USE_SCENE` permission, which is prompted for once
+  on first launch after an install. Declining it silently drops placement back
+  to physics and the 1.5 m projection.
 
 ## Future work
 
-- Complete and document physical recognition verification.
-- Use scene/depth geometry for surface-accurate targets instead of fixed-depth
-  fallback placement.
+- Smaller objects (bottles, cables, connectors) are recognised less reliably
+  than furniture; a larger vision model is the obvious next step.
 - Add broader dictionaries, pronunciation, spaced repetition, and more
   languages.
 - Persist labels across sessions with spatial anchors.
