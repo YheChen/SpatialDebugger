@@ -9,6 +9,11 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+# Living scratch file for context handover between sessions. Deliberately
+# untracked: it is working state, rewritten constantly, and would churn the
+# history. CLAUDE_PROGRESS.md is the committed, curated record.
+handover.json
+
 # Secrets. .env.example IS committed; .env is not.
 .env
 .env.local
