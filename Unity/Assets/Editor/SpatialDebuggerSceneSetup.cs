@@ -311,8 +311,10 @@ namespace SpatialDebugger.EditorTools
             // can be disabled without touching anything that already works.
             var vision = new GameObject("CameraFeed");
             vision.transform.SetParent(systems.transform, false);
-            vision.AddComponent<Vision.CameraFeed>();
-            log.Add("camera feed: passthrough camera access (inert if unsupported)");
+            var feed = vision.AddComponent<Vision.CameraFeed>();
+            var recognizer = vision.AddComponent<Vision.VisionRecognizer>();
+            SetReference(recognizer, "cameraFeed", feed);
+            log.Add("camera feed + vision recognizer (deterministic if camera or Ollama unavailable)");
 
             var sources = new GameObject("PointerSources");
             sources.transform.SetParent(systems.transform, false);
@@ -331,6 +333,7 @@ namespace SpatialDebugger.EditorTools
             var placer = systems.AddComponent<PinchAnnotationPlacer>();
             SetReference(placer, "targetController", targetController);
             SetReference(placer, "dispatcher", dispatcher);
+            SetReference(placer, "recognizer", recognizer);
             log.Add("pinch placer: each pinch drops a world-space label + marker");
 
             SetReference(targetController, "dispatcher", dispatcher);

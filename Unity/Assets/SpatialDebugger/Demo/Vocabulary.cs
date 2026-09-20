@@ -78,12 +78,33 @@ namespace SpatialDebugger.Demo
             new VocabularyEntry("Keyboard", "clavier", "teclado"),
             new VocabularyEntry("Monitor", "écran", "monitor"),
             new VocabularyEntry("Mouse", "souris", "ratón"),
+            new VocabularyEntry("Chair", "chaise", "silla"),
+            new VocabularyEntry("Desk", "bureau", "escritorio"),
+            new VocabularyEntry("Screen", "écran", "pantalla"),
+            new VocabularyEntry("Bag", "sac", "bolsa"),
+            new VocabularyEntry("Can", "canette", "lata"),
+            new VocabularyEntry("Mug", "tasse", "taza"),
+            new VocabularyEntry("Headphones", "casque", "auriculares"),
+            new VocabularyEntry("Notebook", "carnet", "cuaderno"),
             new VocabularyEntry("Door", "porte", "puerta"),
             new VocabularyEntry("Window", "fenêtre", "ventana"),
             new VocabularyEntry("Plant", "plante", "planta"),
             new VocabularyEntry("Lamp", "lampe", "lámpara"),
             new VocabularyEntry("Pen", "stylo", "bolígrafo"),
         };
+
+        /// <summary>
+        /// Every English word the lookup knows, for steering a vision model's
+        /// reply toward a word we can translate.
+        /// </summary>
+        public static IEnumerable<string> KnownWords
+        {
+            get
+            {
+                foreach (var entry in Entries) yield return entry.English;
+                foreach (var entry in Extra) yield return entry.English;
+            }
+        }
 
         /// <summary>The deterministic cycle, in order.</summary>
         public static IReadOnlyList<VocabularyEntry> Cycle => Entries;
@@ -133,8 +154,11 @@ namespace SpatialDebugger.Demo
             var found = Lookup(english);
             if (found != null) return found;
 
+            // Show the genuine recognition with its translations marked
+            // absent. Substituting a known word here would be faking the
+            // result, which is worse than an honest gap.
             var word = string.IsNullOrWhiteSpace(english) ? "Object" : english.Trim();
-            return new VocabularyEntry(word, "-", "-");
+            return new VocabularyEntry(word, "\u2014", "\u2014");
         }
     }
 }

@@ -63,7 +63,60 @@ namespace SpatialDebugger.Annotations
 
             // height covers every line; the cap height of one line is what
             // SpatialText needs.
-            SpatialText.Create(plate.transform, text, height / lines * 0.55f, Color.white);
+            _label = SpatialText.Create(plate.transform, text, height / lines * 0.55f, Color.white);
+            _plate = plate.transform;
+        }
+
+        private SpatialLabel _label;
+        private Transform _plate;
+
+        /// <summary>
+        /// Replaces the caption after the annotation has been built, resizing
+        /// the backing plate to fit.
+        /// </summary>
+        /// <remarks>
+        /// Exists for the recognition flow: a label is placed immediately
+        /// saying "analysing", then rewritten in place when the answer
+        /// arrives. Resizing matters because the plate is sized once from the
+        /// text it was built with, so a longer answer would otherwise overflow
+        /// a placeholder-sized quad.
+        /// </remarks>
+        public void SetText(string text)
+        {
+            if (_label == null || _plate == null) return;
+
+            _label.Text = text;
+
+            var scale = ResolvedScale;
+            var width = SpatialText.EstimateWidth(text) * scale;
+            var lines = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+            if (text != null && text.Contains("<size=")) lines += 1;
+            var height = 0.028f * scale * lines;
+
+            var backing = _plate.Find("Backing");
+            if (backing != null)
+            {
+                backing.localScale =
+                    new Vector3(width + 0.02f * scale, height + 0.012f * scale, 1f);
+            }
+
+            var accent = _plate.Find("Accent");
+            if (accent != null)
+            {
+                accent.localScale = new Vector3(width + 0.02f * scale, 0.004f * scale, 1f);
+                accent.localPosition =
+                    new Vector3(0f, -(height * 0.5f + 0.004f * scale), 0.0015f);
+            }
+
+            // Cap height is per line, so it changes when the line count does.
+            _label.transform.localScale = Vector3.one;
+            var rebuilt = SpatialText.Create(_plate, text, height / lines * 0.55f, Color.white);
+            if (rebuilt != null)
+            {
+                rebuilt.transform.localPosition = _label.transform.localPosition;
+                AnnotationVisuals.SafeDestroy(_label.gameObject);
+                _label = rebuilt;
+            }
         }
     }
 }

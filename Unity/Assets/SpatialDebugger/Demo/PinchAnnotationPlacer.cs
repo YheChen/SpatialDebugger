@@ -1,6 +1,7 @@
 using SpatialDebugger.Annotations;
 using SpatialDebugger.Core;
 using SpatialDebugger.Interaction;
+using SpatialDebugger.Vision;
 using UnityEngine;
 
 namespace SpatialDebugger.Demo
@@ -40,6 +41,14 @@ namespace SpatialDebugger.Demo
 
         [SerializeField] private bool dropMarker = true;
 
+        [Tooltip("When present and the camera is ready, the label starts as " +
+                 "ANALYZING and is rewritten with the recognised object. " +
+                 "Absent or not ready, the deterministic cycle is used.")]
+        [SerializeField] private VisionRecognizer recognizer;
+
+        /// <summary>Shown while the model is thinking.</summary>
+        public const string AnalyzingLabel = "<size=150%>ANALYZING\u2026</size>\n\nFR  \u2014\nES  \u2014";
+
         /// <summary>How many annotations this component has placed.</summary>
         public int PlacedCount { get; private set; }
 
@@ -47,6 +56,7 @@ namespace SpatialDebugger.Demo
         {
             if (targetController == null) targetController = FindAnyObjectByType<SpatialTargetController>();
             if (dispatcher == null) dispatcher = FindAnyObjectByType<SpatialActionDispatcher>();
+            if (recognizer == null) recognizer = FindAnyObjectByType<VisionRecognizer>();
         }
 
         private void OnEnable()
@@ -75,15 +85,55 @@ namespace SpatialDebugger.Demo
                 dispatcher.Dispatch(marker);
             }
 
-            var entry = Vocabulary.At(cycleVocabulary ? PlacedCount : 0);
+            var index = cycleVocabulary ? PlacedCount : 0;
+            var fallback = Vocabulary.At(index);
+            var useRecognition = recognizer != null && recognizer.CameraReady;
 
-            var label = PinchDemo.SpatialActionForPinch(
-                cycleVocabulary ? PlacedCount : 0, point + Vector3.up * labelLift, labelScale);
-            dispatcher.Dispatch(label);
+            // Place something at the pinched point immediately, either way.
+            // Nothing waits on the network before the user sees a result.
+            var labelAction = PinchDemo.SpatialActionForPinch(
+                index, point + Vector3.up * labelLift, labelScale);
+
+            if (useRecognition) labelAction.Text = AnalyzingLabel;
+
+            // The HANDLE is what makes update-in-place possible. Captured per
+            // pinch, so overlapping requests each rewrite their own label and
+            // never each other's.
+            var renderer = dispatcher.DispatchTracked(labelAction) as LabelRenderer;
 
             PlacedCount++;
-            Debug.Log("[SpatialDebugger] placed annotation #" + PlacedCount + " (" +
-                      entry.English + ") at " + point);
+            var placedIndex = PlacedCount;
+
+            Debug.Log("[SpatialDebugger] placed annotation #" + placedIndex + " (" +
+                      (useRecognition ? "analyzing" : fallback.English) + ") at " + point);
+
+            if (!useRecognition || renderer == null) return;
+
+            recognizer.Recognise(point, result =>
+            {
+                // The annotation may have been cleared or budgeted away while
+                // the model was thinking.
+                if (renderer == null) return;
+
+                VocabularyEntry entry;
+                if (result != null && result.Success)
+                {
+                    // A genuine recognition outside the dictionary is shown as
+                    // itself with the translations marked absent -- never
+                    // swapped for a deterministic word, which would be faking it.
+                    entry = Vocabulary.LookupOrEcho(RecognitionText.ForDisplay(result.Word));
+                    Debug.Log("[SpatialDebugger] annotation #" + placedIndex +
+                              " recognised as " + entry.English);
+                }
+                else
+                {
+                    entry = fallback;
+                    Debug.Log("[SpatialDebugger] annotation #" + placedIndex +
+                              " fell back to " + entry.English);
+                }
+
+                renderer.SetText(entry.ToLabel());
+            });
         }
     }
 }

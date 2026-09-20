@@ -80,23 +80,39 @@ namespace SpatialDebugger.Annotations
         /// <summary>Renders one action. Returns false if it was rejected.</summary>
         public bool Dispatch(SpatialAction action)
         {
+            return DispatchTracked(action) != null || action?.Type == SpatialActionType.Clear;
+        }
+
+        /// <summary>
+        /// Renders one action and hands back the renderer, so the caller can
+        /// update that specific annotation later.
+        /// </summary>
+        /// <remarks>
+        /// Additive. The dispatcher keeps a flat list with no id lookup, and
+        /// redesigning that to support update-by-id would risk the verified
+        /// demo for no benefit — holding the handle is both smaller and
+        /// sufficient. Returns null for a rejected action, and for
+        /// <see cref="SpatialActionType.Clear"/>, which produces no renderer.
+        /// </remarks>
+        public AnnotationRenderer DispatchTracked(SpatialAction action)
+        {
             if (action == null)
             {
                 ActionRejected?.Invoke(null, "action was null");
-                return false;
+                return null;
             }
 
             if (action.Type == SpatialActionType.Clear)
             {
                 ClearAll();
-                return true;
+                return null;
             }
 
             if (!action.IsValid(out var error))
             {
                 Debug.LogWarning("[SpatialDebugger] rejected action: " + error);
                 ActionRejected?.Invoke(action, error);
-                return false;
+                return null;
             }
 
             var parent = ResolveParent(action.Space, out var parentError);
@@ -104,7 +120,7 @@ namespace SpatialDebugger.Annotations
             {
                 Debug.LogWarning("[SpatialDebugger] rejected action: " + parentError);
                 ActionRejected?.Invoke(action, parentError);
-                return false;
+                return null;
             }
 
             Prune();
@@ -126,12 +142,12 @@ namespace SpatialDebugger.Annotations
                 AnnotationVisuals.SafeDestroy(host);
                 var message = "no renderer for " + action.Type;
                 ActionRejected?.Invoke(action, message);
-                return false;
+                return null;
             }
 
             renderer.Initialise(action);
             _live.Add(renderer);
-            return true;
+            return renderer;
         }
 
         private static AnnotationRenderer AddRenderer(GameObject host, SpatialActionType type)

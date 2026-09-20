@@ -366,6 +366,29 @@ namespace SpatialDebugger.Vision
             return _access != null && _access.IsPlaying ? _access.GetTexture() : null;
         }
 
+        /// <summary>
+        /// Projects a world point into the camera image (0..1, bottom-left
+        /// origin), so a crop can follow what the user pointed at.
+        /// </summary>
+        public bool TryGetViewportPoint(Vector3 worldPoint, out Vector2 viewportPoint)
+        {
+            try
+            {
+                if (_access != null && _access.IsPlaying)
+                {
+                    viewportPoint = _access.WorldToViewportPoint(worldPoint);
+                    return true;
+                }
+            }
+            catch (Exception exception)
+            {
+                Fail("WorldToViewportPoint threw: " + exception.Message);
+            }
+
+            viewportPoint = new Vector2(0.5f, 0.5f);
+            return false;
+        }
+
         /// <summary>The camera pose when the current frame was captured.</summary>
         public bool TryGetCameraPose(out Pose pose)
         {

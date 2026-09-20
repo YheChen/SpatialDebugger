@@ -336,6 +336,75 @@ namespace SpatialDebugger.Tests
                    "\"text\":" + Newtonsoft.Json.JsonConvert.ToString(action.Text) + "}";
         }
 
+        // -- update-in-place, for recognition --------------------------------
+
+        [Test]
+        public void DispatchTracked_hands_back_a_usable_handle()
+        {
+            var renderer = _dispatcher.DispatchTracked(
+                SpatialAction.Label(Vector3.zero, "ANALYZING")) as LabelRenderer;
+
+            Assert.IsNotNull(renderer, "no handle returned");
+            Assert.AreEqual("ANALYZING", renderer.GetComponentInChildren<SpatialLabel>().Text);
+        }
+
+        [Test]
+        public void An_annotation_can_be_rewritten_in_place()
+        {
+            var renderer = _dispatcher.DispatchTracked(
+                SpatialAction.Label(new Vector3(0.1f, 0.2f, 0.3f), "ANALYZING")) as LabelRenderer;
+
+            var before = renderer.transform.position;
+            renderer.SetText("CHAIR\n\nFR  chaise\nES  silla");
+
+            Assert.AreEqual("CHAIR\n\nFR  chaise\nES  silla",
+                renderer.GetComponentInChildren<SpatialLabel>().Text);
+            Assert.AreEqual(before, renderer.transform.position, "the annotation must not move");
+            Assert.AreEqual(1, _dispatcher.LiveCount, "rewriting must not add an annotation");
+        }
+
+        [Test]
+        public void Overlapping_requests_update_their_own_annotation_only()
+        {
+            // Two pinches in flight at once: each handle must rewrite its own
+            // label and leave the other alone.
+            var first = _dispatcher.DispatchTracked(
+                SpatialAction.Label(new Vector3(1f, 0f, 0f), "ANALYZING")) as LabelRenderer;
+            var second = _dispatcher.DispatchTracked(
+                SpatialAction.Label(new Vector3(-1f, 0f, 0f), "ANALYZING")) as LabelRenderer;
+
+            // Resolve out of order, as real requests would.
+            second.SetText("BOTTLE");
+            first.SetText("CHAIR");
+
+            Assert.AreEqual("CHAIR", first.GetComponentInChildren<SpatialLabel>().Text);
+            Assert.AreEqual("BOTTLE", second.GetComponentInChildren<SpatialLabel>().Text);
+            Assert.AreEqual(2, _dispatcher.LiveCount);
+        }
+
+        [Test]
+        public void A_clear_action_returns_no_handle_but_still_clears()
+        {
+            _dispatcher.Dispatch(DemoScenarios.Respond(DemoScenarios.Default));
+            Assert.IsNotEmpty(Annotations());
+
+            Assert.IsNull(_dispatcher.DispatchTracked(SpatialAction.Clear()));
+            Assert.IsEmpty(Annotations());
+        }
+
+        [Test]
+        public void A_rejected_action_returns_no_handle()
+        {
+            var bad = new SpatialAction
+            {
+                Type = SpatialActionType.Label,
+                Position = Vector3.zero,
+                HasPosition = true
+            };
+
+            Assert.IsNull(_dispatcher.DispatchTracked(bad));
+        }
+
         [Test]
         public void A_backend_payload_renders_end_to_end()
         {
