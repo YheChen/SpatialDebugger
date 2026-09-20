@@ -1,5 +1,12 @@
 # SpatialDebugger — overnight progress
 
+> **Historical snapshot:** This file records the 2026-09-19 build state and is
+> intentionally preserved as an engineering handoff. Camera access and a local
+> recognition route were implemented afterward. See [README.md](README.md) for
+> the current verified / implemented / in-progress status. In particular, real
+> object recognition still must not be claimed until its full physical Quest
+> test succeeds.
+
 Written 2026-09-19, overnight. Everything below is either **verified by an
 actual run** or explicitly marked as not verified. Nothing is claimed to work on
 a headset, because no headset was attached.

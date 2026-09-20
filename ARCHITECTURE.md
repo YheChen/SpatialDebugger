@@ -1,5 +1,11 @@
 # SpatialDebugger — architecture
 
+> **Current extension:** The general spatial-action architecture below remains
+> valid. The language-learning demo now also has a direct Quest-camera-to-local-
+> Ollama route, documented in “Language-learning vision extension.” Camera
+> capture is physically verified; final recognition remains unverified on
+> hardware.
+
 A Meta Quest 3 mixed-reality tool for debugging physical electronics. You point
 at something on a breadboard, ask, and the answer appears in the air next to the
 actual wire.
@@ -7,15 +13,13 @@ actual wire.
 ```
 physical electronics
         ↓
-Quest passthrough camera          ← NOT IMPLEMENTED (see "Future: perception")
+hand/controller target selection  ← IMPLEMENTED
         ↓
-multimodal perception             ← seam exists, mock today
-        ↓
-AI debugging / reasoning          ← seam exists, deterministic scenarios today
+AI debugging / reasoning          ← optional provider seams; deterministic scenarios today
         ↓
 structured spatial actions        ← IMPLEMENTED, the core of the system
         ↓
-Quest mixed-reality annotations   ← IMPLEMENTED
+Quest mixed-reality annotations   ← IMPLEMENTED AND PHYSICALLY VERIFIED
 ```
 
 ## The one idea that holds it together
@@ -178,68 +182,61 @@ Both import their SDK lazily and both are optional.
 yields the mock. `/ask` and `/analyze` catch provider failures and answer from
 the offline scenarios rather than surfacing a 5xx into a headset.
 
-## Future: perception (NOT IMPLEMENTED)
+## Language-learning vision extension
 
-The intended pipeline, and what the *installed* SDK actually offers for each
-step. Nothing below is built; this is a map, not a claim.
+**Implementation status:** the route is implemented and test-covered. Quest RGB
+camera capture and USB port reversing are physically verified. The complete
+Moondream recognition result has not yet been declared verified on hardware.
+
+This route deliberately does not pass through the FastAPI provider seams above:
 
 ```
-Quest passthrough camera
-        │   Meta.XR.PassthroughCameraAccess          (in the MRUK package)
-        │     one component per eye, CameraPosition = Left | Right
-        │     GetTexture()  -> Texture (GPU)
-        │     GetColors()   -> NativeArray<Color32> (CPU)
-        │     Intrinsics    -> FocalLength, PrincipalPoint,
-        │                      SensorResolution, LensOffset
-        ▼
-image + intrinsics + camera pose
-        │   OMNI or OpenAI vision, via AnalyzeRequest.image_base64
-        ▼
-2D detection: "the LED's anode is at pixel (412, 233)"
-        │   PassthroughCameraAccess.ViewportPointToRay(Vector2, Pose?)
-        │   and .GetCameraPose()
-        ▼
-ray in world space
-        │   Meta.XR.EnvironmentRaycastManager.Raycast(ray, out hit, maxDistance)
-        │     depth-sensor based, no Space Setup required, device only
-        │   or MRUKRoom.Raycast(ray, maxDist, new LabelFilter(), out hit, out anchor)
-        │     captured planes, requires Space Setup
-        ▼
-world point
+hand ray + pinch
+        │
+        ├──► selected world point ──► immediate ANALYZING label
         │
         ▼
-SpatialTarget.transform.position = world point
+Meta.XR.PassthroughCameraAccess
+        │   real Quest RGB Texture (GPU)
+        ▼
+world point projected into camera viewport
         │
         ▼
-...and every existing annotation renderer works unchanged.
+one-time GPU readback + JPEG crop
+        │
+        ▼
+Meta OllamaProvider / IChatTask
+        │   http://127.0.0.1:11434 on Quest
+        │   adb reverse tcp:11434 tcp:11434 over USB
+        ▼
+Moondream in Ollama on the Mac
+        │
+        ▼
+normalized English noun ──► local FR/ES lookup
+        │
+        ▼
+rewrite the same world-space label
 ```
 
-Meta ships a **worked reference implementation of exactly this loop** in the
-Core package: `Scripts/BuildingBlocks/AIBlocks` — `ObjectDetectionAgent`,
-`ObjectDetectionVisualizer`, `ImageSegmentation*`, `SegmentationMask3DVisualizer`,
-`DepthTools`, `DepthTextureAccess`. Read that before writing any of it.
+The hand ray already establishes **where** the user means, so the model only
+answers **what**. That is why `VisionRecognizer` uses Meta's `IChatTask` rather
+than an object-detection task with bounding boxes. The crop follows the pinched
+point, reducing irrelevant image content without asking the model to relocate
+the selection.
 
-**What is currently switched off**, and would need enabling first:
+`PinchAnnotationPlacer` retains the `LabelRenderer` returned by
+`DispatchTracked`, so each asynchronous request updates its own label even when
+multiple requests finish out of order. Any capture, transport, timeout, or
+response failure updates that label from the deterministic vocabulary instead.
 
-| Needed | Current state |
-|--------|---------------|
-| `horizonos.permission.HEADSET_CAMERA` | absent from `AndroidManifest.xml` |
-| `OVRProjectConfig.isPassthroughCameraAccessEnabled` | `0` |
-| `com.oculus.permission.USE_SCENE` (for the depth raycast) | now enabled via `sceneSupport`; re-run the setup tool |
+The headset-camera permission and passthrough-camera project setting are now
+enabled. The supported camera route is `PassthroughCameraAccess`; passthrough
+itself is compositor output and cannot be captured with `WebCamTexture` or a
+normal Unity framebuffer grab.
 
-**What is not available here**: `Meta.XR.EnvironmentDepth.EnvironmentDepthManager`
-compiles a real provider only under `XR_OCULUS_4_2_0_OR_NEWER` or
-`OPEN_XR_META_2_1_OR_NEWER`. Neither `com.unity.xr.oculus` nor
-`com.unity.xr.meta-openxr` is installed, so `IsSupported` returns false. The
-depth path that *does* work is MRUK's `EnvironmentRaycastManager`. There is no
-`WebCamTexture` or Camera2 route to the passthrough feed — it is
-`PassthroughCameraAccess` or nothing.
-
-The last two lines are the point: the annotation system is already agnostic to
-how the target got placed. CV is a better `SpatialTarget` setter, not a rewrite.
-
-`AnalyzeRequest.image_base64` already exists on the wire and is accepted and
-ignored, so the client can start sending frames before anything consumes them.
+Surface-accurate depth remains future work. The current interaction first uses
+available scene/physics hits and otherwise places a target 1.5 m along the hand
+ray. That fixed distance is a reliable fallback, not a depth measurement.
 
 ## Deliberate trade-offs
 
