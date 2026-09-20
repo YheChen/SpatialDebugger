@@ -91,6 +91,7 @@ namespace SpatialDebugger.Demo
             new VocabularyEntry("Plant", "plante", "planta"),
             new VocabularyEntry("Lamp", "lampe", "lámpara"),
             new VocabularyEntry("Pen", "stylo", "bolígrafo"),
+            new VocabularyEntry("Wall", "mur", "pared"),
         };
 
         /// <summary>

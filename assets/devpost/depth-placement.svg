@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bgd" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#08141e"/><stop offset="1" stop-color="#142c3b"/></linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#244050" stop-opacity="0.75"/><stop offset="1" stop-color="#0a151d" stop-opacity="0.25"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bgd)"/>
+  <text x="74" y="82" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" fill="#fff">ENVIRONMENT DEPTH PLACES EACH TARGET AT ITS MEASURED HIT</text>
+  <text x="76" y="120" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#b9d4e1">Depth changes where the annotation lives; it is not forced onto one invisible 1.5 m plane.</text>
+
+  <path d="M0 610L1600 410V900H0Z" fill="url(#floor)"/>
+  <g stroke="#6b8794" stroke-opacity="0.32" stroke-width="2"><path d="M215 900L1600 425"/><path d="M520 900L1600 425"/><path d="M820 900L1600 425"/><path d="M1120 900L1600 425"/><path d="M1420 900L1600 425"/><path d="M0 700L1600 492"/><path d="M0 790L1600 585"/></g>
+
+  <rect x="90" y="360" width="150" height="92" rx="38" fill="#102b39" stroke="#e8f5fb" stroke-width="8"/>
+  <line x1="115" y1="452" x2="93" y2="517" stroke="#e8f5fb" stroke-width="8"/>
+  <line x1="215" y1="452" x2="237" y2="517" stroke="#e8f5fb" stroke-width="8"/>
+  <circle cx="165" cy="405" r="10" fill="#e8f5fb"/>
+  <text x="165" y="552" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#dceef6">HEADSET ORIGIN</text>
+
+  <line x1="240" y1="405" x2="530" y2="520" stroke="#ffbf5a" stroke-width="6" stroke-opacity="0.82"/>
+  <line x1="240" y1="405" x2="900" y2="500" stroke="#6ee4ff" stroke-width="6" stroke-opacity="0.82"/>
+  <line x1="240" y1="405" x2="1390" y2="455" stroke="#8ce59e" stroke-width="6" stroke-opacity="0.82"/>
+  <g filter="url(#glow)"><circle cx="530" cy="520" r="13" fill="#ffbf5a"/><circle cx="900" cy="500" r="13" fill="#6ee4ff"/><circle cx="1390" cy="455" r="13" fill="#8ce59e"/></g>
+
+  <g font-family="Arial, Helvetica, sans-serif">
+    <g transform="translate(405 585)"><rect width="290" height="126" rx="18" fill="#1f1a10" stroke="#ffbf5a" stroke-width="3"/><text x="24" y="38" font-size="17" font-weight="800" letter-spacing="1.2" fill="#ffd587">NEAR HIT</text><text x="24" y="86" font-size="40" font-weight="800" fill="#fff">0.70 m</text></g>
+    <g transform="translate(755 265)"><rect width="290" height="126" rx="18" fill="#0e2632" stroke="#6ee4ff" stroke-width="3"/><text x="24" y="38" font-size="17" font-weight="800" letter-spacing="1.2" fill="#9bebff">MID HIT</text><text x="24" y="86" font-size="40" font-weight="800" fill="#fff">1.87 m</text></g>
+    <g transform="translate(1260 235)"><rect width="276" height="126" rx="18" fill="#112719" stroke="#8ce59e" stroke-width="3"/><text x="24" y="38" font-size="17" font-weight="800" letter-spacing="1.2" fill="#b9f2c4">FAR HIT</text><text x="24" y="86" font-size="40" font-weight="800" fill="#fff">3.54 m</text></g>
+    <path d="M550 585L530 535" stroke="#ffbf5a" stroke-width="3"/><path d="M900 391V485" stroke="#6ee4ff" stroke-width="3"/><path d="M1390 361V440" stroke="#8ce59e" stroke-width="3"/>
+  </g>
+
+  <rect x="70" y="780" width="1460" height="72" rx="20" fill="#07131d" fill-opacity="0.85" stroke="#ffffff" stroke-opacity="0.18"/>
+  <text x="800" y="813" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#fff">QUEST 3 OBSERVATIONS</text>
+  <text x="800" y="838" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" letter-spacing="1.4" fill="#c4dee9">0.68 • 0.70 • 0.98 • 1.06 • 1.87 • 2.99 • 3.54 m</text>
+  <text x="800" y="878" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="1.4" fill="#9bb6c3">EXPLANATORY DIAGRAM USING REAL OBSERVED DISTANCES • NOT A QUEST SCREENSHOT</text>
+</svg>

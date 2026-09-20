@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07131d"/><stop offset="1" stop-color="#102737"/></linearGradient>
+    <linearGradient id="quest" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#112d3d"/><stop offset="1" stop-color="#0b1d29"/></linearGradient>
+    <linearGradient id="laptop" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#352513"/><stop offset="1" stop-color="#1d1710"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.35"/></filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <text x="70" y="76" font-family="Arial, Helvetica, sans-serif" font-size="43" font-weight="800" fill="#fff">FROM QUEST CAMERA TO SPATIAL LABEL</text>
+  <text x="72" y="114" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#b7d4e1">A selected camera crop goes to a local laptop model; the result returns to the same world-space card.</text>
+
+  <rect x="55" y="150" width="1070" height="630" rx="28" fill="url(#quest)" stroke="#5edcf7" stroke-opacity="0.5" stroke-width="2"/>
+  <rect x="1145" y="150" width="400" height="630" rx="28" fill="url(#laptop)" stroke="#ffbf5a" stroke-opacity="0.7" stroke-width="2"/>
+  <text x="88" y="194" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="800" letter-spacing="2" fill="#77e6ff">META QUEST 3</text>
+  <text x="1177" y="194" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="800" letter-spacing="2" fill="#ffc96d">DEVELOPER LAPTOP</text>
+
+  <g font-family="Arial, Helvetica, sans-serif" filter="url(#shadow)">
+    <g transform="translate(88 238)">
+      <rect width="278" height="150" rx="20" fill="#123040" stroke="#6ee4ff" stroke-width="2"/>
+      <circle cx="40" cy="40" r="22" fill="#6ee4ff"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#09202b">1</text>
+      <text x="76" y="38" font-size="22" font-weight="800" fill="#fff">PASSTHROUGH</text><text x="76" y="65" font-size="22" font-weight="800" fill="#fff">CAMERA</text>
+      <text x="26" y="108" font-size="17" fill="#d2edf5">Real Quest RGB texture</text><text x="26" y="132" font-size="17" fill="#d2edf5">ready for capture</text>
+    </g>
+    <g transform="translate(405 238)">
+      <rect width="300" height="150" rx="20" fill="#123040" stroke="#6ee4ff" stroke-width="2"/>
+      <circle cx="40" cy="40" r="22" fill="#6ee4ff"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#09202b">2</text>
+      <text x="76" y="38" font-size="21" font-weight="800" fill="#fff">PINCH + DEPTH</text><text x="76" y="65" font-size="21" font-weight="800" fill="#fff">RAYCAST</text>
+      <text x="26" y="108" font-size="17" fill="#d2edf5">Tracked hand selects a</text><text x="26" y="132" font-size="17" fill="#d2edf5">measured physical point</text>
+    </g>
+    <g transform="translate(745 238)">
+      <rect width="332" height="150" rx="20" fill="#123040" stroke="#6ee4ff" stroke-width="2"/>
+      <circle cx="40" cy="40" r="22" fill="#6ee4ff"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#09202b">3</text>
+      <text x="76" y="38" font-size="21" font-weight="800" fill="#fff">WORLD-SPACE TARGET</text>
+      <text x="26" y="88" font-size="17" fill="#d2edf5">Snapshot target position;</text><text x="26" y="112" font-size="17" fill="#d2edf5">place ANALYZING… card</text>
+    </g>
+    <g transform="translate(745 485)">
+      <rect width="332" height="155" rx="20" fill="#123040" stroke="#6ee4ff" stroke-width="2"/>
+      <circle cx="40" cy="40" r="22" fill="#6ee4ff"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#09202b">4</text>
+      <text x="76" y="38" font-size="21" font-weight="800" fill="#fff">PROJECT + CROP</text>
+      <text x="26" y="88" font-size="17" fill="#d2edf5">World point → camera viewport</text><text x="26" y="114" font-size="17" fill="#d2edf5">GPU readback → crop → JPEG</text>
+    </g>
+    <g transform="translate(1185 248)">
+      <rect width="320" height="170" rx="20" fill="#3a2917" stroke="#ffc45e" stroke-width="2"/>
+      <circle cx="40" cy="40" r="22" fill="#ffc45e"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#30200b">5</text>
+      <text x="76" y="38" font-size="23" font-weight="800" fill="#fff">MOONDREAM</text><text x="76" y="67" font-size="23" font-weight="800" fill="#fff">THROUGH OLLAMA</text>
+      <text x="26" y="112" font-size="17" fill="#f4ddba">Runs locally on laptop</text><text x="26" y="138" font-size="17" fill="#f4ddba">No hosted vision API</text>
+    </g>
+    <g transform="translate(1185 510)">
+      <rect width="320" height="170" rx="20" fill="#3a2917" stroke="#ffc45e" stroke-width="2"/>
+      <circle cx="40" cy="40" r="22" fill="#ffc45e"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#30200b">6</text>
+      <text x="76" y="38" font-size="21" font-weight="800" fill="#fff">STRICT CLASS</text>
+      <text x="26" y="85" font-size="17" fill="#f4ddba">laptop • table • chair</text><text x="26" y="111" font-size="17" fill="#f4ddba">wall • unknown</text>
+      <text x="26" y="142" font-size="15" fill="#d8bd91">Only the first four are successes</text>
+    </g>
+    <g transform="translate(405 505)">
+      <rect width="300" height="135" rx="20" fill="#123849" stroke="#7be9ff" stroke-width="2"/>
+      <circle cx="40" cy="40" r="22" fill="#7be9ff"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#09202b">7</text>
+      <text x="76" y="38" font-size="21" font-weight="800" fill="#fff">LOCAL FR / ES</text><text x="76" y="65" font-size="21" font-weight="800" fill="#fff">VOCABULARY</text>
+      <text x="26" y="106" font-size="17" fill="#d5f1f7">No translation API call</text>
+    </g>
+    <g transform="translate(88 485)">
+      <rect width="278" height="155" rx="20" fill="#123849" stroke="#7be9ff" stroke-width="3"/>
+      <circle cx="40" cy="40" r="22" fill="#7be9ff"/><text x="40" y="48" text-anchor="middle" font-size="21" font-weight="800" fill="#09202b">8</text>
+      <text x="76" y="38" font-size="20" font-weight="800" fill="#fff">UPDATE THE SAME</text><text x="76" y="64" font-size="20" font-weight="800" fill="#fff">SPATIAL CARD</text>
+      <text x="26" y="108" font-size="16" fill="#d5f1f7">Unknown or failure becomes</text><text x="26" y="132" font-size="16" fill="#d5f1f7">NOT RECOGNIZED</text>
+    </g>
+  </g>
+
+  <line x1="366" y1="313" x2="382" y2="313" stroke="#7be9ff" stroke-width="4" stroke-linecap="round"/>
+  <line x1="705" y1="313" x2="722" y2="313" stroke="#7be9ff" stroke-width="4" stroke-linecap="round"/>
+  <line x1="911" y1="388" x2="911" y2="417" stroke="#7be9ff" stroke-width="4" stroke-linecap="round"/>
+  <rect x="1108" y="616" width="77" height="4" rx="2" fill="#7be9ff"/>
+  <rect x="1108" y="618" width="4" height="100" rx="2" fill="#7be9ff"/>
+  <rect x="555" y="714" width="557" height="4" rx="2" fill="#7be9ff"/>
+  <rect x="553" y="648" width="4" height="68" rx="2" fill="#7be9ff"/>
+  <line x1="405" y1="562" x2="373" y2="562" stroke="#7be9ff" stroke-width="4" stroke-linecap="round"/>
+  <rect x="1077" y="560" width="39" height="4" rx="2" fill="#ffc45e"/>
+  <rect x="1112" y="333" width="4" height="231" rx="2" fill="#ffc45e"/>
+  <rect x="1114" y="331" width="63" height="4" rx="2" fill="#ffc45e"/>
+  <rect x="1343" y="418" width="4" height="76" rx="2" fill="#ffc45e"/>
+
+  <g fill="#7be9ff">
+    <path d="M370 303L390 313L370 323Z"/><path d="M710 303L730 313L710 323Z"/><path d="M901 405L911 425L921 405Z"/>
+    <path d="M545 660L555 640L565 660Z"/><path d="M385 552L365 562L385 572Z"/>
+  </g>
+  <g fill="#ffc45e">
+    <path d="M1165 323L1185 333L1165 343Z"/><path d="M1335 482L1345 502L1355 482Z"/>
+  </g>
+
+  <rect x="1062" y="449" width="194" height="44" rx="22" fill="#08131d" stroke="#ffffff" stroke-opacity="0.35"/>
+  <text x="1159" y="477" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="800" letter-spacing="1" fill="#fff">USB • ADB REVERSE</text>
+  <text x="800" y="839" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" letter-spacing="1.3" fill="#b7d7e5">EXPLANATORY DIAGRAM • LOCAL LAPTOP INFERENCE • NO COMMERCIAL OR HOSTED VISION API</text>
+</svg>

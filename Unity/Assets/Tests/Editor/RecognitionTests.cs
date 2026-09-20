@@ -10,17 +10,20 @@ namespace SpatialDebugger.Tests
     /// Turning a vision model's reply into something displayable.
     /// </summary>
     /// <remarks>
-    /// The prompt asks for a single noun, but small models drift. These are
-    /// the shapes moondream and friends actually produce.
+    /// The frozen demo prompt asks Moondream to classify exactly one of
+    /// four objects or unknown. Parsing must never mine a class out of prose.
     /// </remarks>
     public class RecognitionTests
     {
-        private static string N(string raw) => RecognitionText.Normalize(raw, Vocabulary.KnownWords);
+        private static string N(string raw) => RecognitionText.Normalize(raw);
 
         [Test]
-        public void A_clean_one_word_answer_passes_through()
+        public void The_four_supported_one_word_answers_pass_through()
         {
             Assert.AreEqual("chair", N("chair"));
+            Assert.AreEqual("laptop", N("laptop"));
+            Assert.AreEqual("table", N("table"));
+            Assert.AreEqual("wall", N("wall"));
         }
 
         [Test]
@@ -40,26 +43,25 @@ namespace SpatialDebugger.Tests
         }
 
         [Test]
-        public void Articles_and_filler_are_skipped()
+        public void Prose_is_not_mined_for_a_supported_class()
         {
-            Assert.AreEqual("chair", N("a chair"));
-            Assert.AreEqual("chair", N("the chair"));
+            Assert.AreEqual("unknown", N("a chair"));
+            Assert.AreEqual("unknown", N("The main object is a laptop."));
         }
 
         [Test]
-        public void A_known_word_is_found_inside_prose()
+        public void Unsupported_and_multiple_answers_become_unknown()
         {
-            // The whole reason Normalize takes a vocabulary.
-            Assert.AreEqual("chair", N("This is a wooden chair."));
-            Assert.AreEqual("laptop", N("I see a laptop on the desk"));
-            Assert.AreEqual("bottle", N("It appears to be a plastic bottle."));
+            Assert.AreEqual("unknown", N("couch"));
+            Assert.AreEqual("unknown", N("chair table"));
+            Assert.AreEqual("unknown", N("urn"));
         }
 
         [Test]
-        public void An_unknown_word_still_yields_the_first_real_token()
+        public void Explicit_unknown_remains_unknown()
         {
-            Assert.AreEqual("stapler", N("stapler"));
-            Assert.AreEqual("stapler", N("a stapler."));
+            Assert.AreEqual("unknown", N("unknown"));
+            Assert.AreEqual("unknown", N(" UNKNOWN. "));
         }
 
         [Test]
@@ -70,42 +72,6 @@ namespace SpatialDebugger.Tests
             Assert.IsNull(N("   "));
             Assert.IsNull(N("..."));
             Assert.IsNull(N("!!!"));
-        }
-
-        // -- description-shaped replies -------------------------------------
-        // The prompt is now a question, because moondream returns an EMPTY
-        // string for "answer with one word" and a deterministic junk token for
-        // instruction blocks. So the normaliser must mine a sentence.
-
-        [Test]
-        public void The_noun_after_is_a_is_extracted()
-        {
-            Assert.AreEqual("chair", N("The main object in this image is a chair."));
-            Assert.AreEqual("laptop", N("The main object in this image is a laptop."));
-            Assert.AreEqual("table", N("This is an image of a table."));
-        }
-
-        [Test]
-        public void An_adjective_does_not_win_over_the_noun()
-        {
-            Assert.AreEqual("chair", N("The main object is a wooden chair."));
-            Assert.AreEqual("bottle", N("It is a clear plastic bottle."));
-        }
-
-        [Test]
-        public void Narration_verbs_are_not_mistaken_for_the_object()
-        {
-            // Without the noise list these would normalise to "main" or "shows".
-            Assert.AreEqual("backpack", N("The image shows a backpack on the floor."));
-            Assert.AreEqual("cup", N("This picture features a cup."));
-        }
-
-        [Test]
-        public void A_long_caption_still_yields_the_object()
-        {
-            Assert.AreEqual("table",
-                N("The main object in this image is a coffee table, positioned in the "
-                  + "center of the living room with a couch behind it."));
         }
 
         [Test]
@@ -119,14 +85,31 @@ namespace SpatialDebugger.Tests
         // -- translation of recognised words --------------------------------
 
         [Test]
-        public void The_demo_objects_all_translate()
+        public void The_four_supported_classes_all_translate()
         {
-            foreach (var word in new[] { "chair", "laptop", "bottle", "backpack" })
+            foreach (var word in new[] { "laptop", "table", "chair", "wall" })
             {
                 var entry = Vocabulary.Lookup(word);
                 Assert.IsNotNull(entry, word);
                 Assert.AreNotEqual("—", entry.French, word + " should have a real translation");
             }
+
+            Assert.AreEqual("ordinateur portable", Vocabulary.Lookup("laptop").French);
+            Assert.AreEqual("portátil", Vocabulary.Lookup("laptop").Spanish);
+            Assert.AreEqual("table", Vocabulary.Lookup("table").French);
+            Assert.AreEqual("mesa", Vocabulary.Lookup("table").Spanish);
+            Assert.AreEqual("chaise", Vocabulary.Lookup("chair").French);
+            Assert.AreEqual("silla", Vocabulary.Lookup("chair").Spanish);
+            Assert.AreEqual("mur", Vocabulary.Lookup("wall").French);
+            Assert.AreEqual("pared", Vocabulary.Lookup("wall").Spanish);
+        }
+
+        [Test]
+        public void Unknown_is_not_a_recognition_success()
+        {
+            Assert.IsFalse(new RecognitionResult { Word = "unknown" }.Success);
+            Assert.IsFalse(new RecognitionResult { Word = null }.Success);
+            Assert.IsTrue(new RecognitionResult { Word = "chair" }.Success);
         }
 
         [Test]
