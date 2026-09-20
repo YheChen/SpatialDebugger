@@ -6,6 +6,58 @@ a headset, because no headset was attached.
 
 ---
 
+## Language-learning demo (deterministic)
+
+Successive pinches cycle CHAIR -> LAPTOP -> BOTTLE -> BACKPACK -> CHAIR, each
+placing a world-anchored trilingual label:
+
+```
+CHAIR
+
+FR  chaise
+ES  silla
+```
+
+Works offline: no backend, no camera, no AI, no network. `Demo/Vocabulary.cs`
+holds the cycle and an English-to-FR/ES lookup (16 words) that doubles as the
+offline translation fallback if a recogniser ever returns a bare English noun.
+
+**Recognition is NOT implemented.** The labels are deterministic, not
+recognised. See "Quest camera access" below.
+
+## Quest camera access — investigated, feasible, deliberately NOT integrated
+
+`Meta.XR.PassthroughCameraAccess` (namespace `Meta.XR`, **not**
+`Meta.XR.MRUtilityKit`) is a public MonoBehaviour in the MRUK package's runtime
+assembly, auto-referenced, with everything needed: `GetTexture()`,
+`GetColors()`, `Intrinsics`, `GetCameraPose()`, `ViewportPointToRay()`.
+
+Not integrated because **capturing frames alone demonstrates nothing**: no
+recogniser exists. The backend ignores `AnalyzeRequest.image_base64`
+(`main.py` uses only question/context/target_label), `MockProvider` discards
+it, and no vision model or API key is configured. Wiring the camera would add
+a permission prompt and manifest risk for zero visible benefit.
+
+What it would take (four changes, none touching the frozen XR foundation):
+
+1. `horizonos.permission.HEADSET_CAMERA` in `Assets/Plugins/Android/AndroidManifest.xml`
+2. `isPassthroughCameraAccessEnabled: 1` in `Assets/Oculus/OculusProjectConfig.asset`
+3. A runtime `Permission.RequestUserPermission` call — `PassthroughCameraAccess`
+   only polls, it never requests
+4. One GameObject carrying the component (one instance per eye; a second with
+   the same `CameraPosition` hard-fails)
+
+Device gate: Quest 3 / 3S only, Horizon OS SDK >= 74. Not behind experimental
+features. No alternative route exists — `WebCamTexture` and Camera2 have zero
+occurrences in the installed packages, and passthrough is an OS compositor
+layer that never enters Unity's framebuffer, so it cannot be blitted.
+
+Also relevant for a future update-in-place flow: `SpatialAction.Id` is **dead**
+— `SpatialActionDispatcher` keeps a flat `List<AnnotationRenderer>` with no id
+lookup, and `Dispatch` returns `bool`, not a handle. Updating one annotation
+today means clear-all + redispatch, which would wipe every placed label. An
+additive `Dispatch` overload returning the renderer is the ~20-line fix.
+
 ## Physical Quest 3 — VERIFIED ON HARDWARE
 
 The full pinch-to-annotate demo is confirmed working on the device. Every item

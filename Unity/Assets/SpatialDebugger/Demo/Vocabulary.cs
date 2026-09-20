@@ -1,0 +1,140 @@
+using System;
+using System.Collections.Generic;
+
+namespace SpatialDebugger.Demo
+{
+    /// <summary>One object and its translations.</summary>
+    [Serializable]
+    public class VocabularyEntry
+    {
+        public string English;
+        public string French;
+        public string Spanish;
+
+        public VocabularyEntry(string english, string french, string spanish)
+        {
+            English = english;
+            French = french;
+            Spanish = spanish;
+        }
+
+        /// <summary>
+        /// The label text as it appears in the headset.
+        /// </summary>
+        /// <remarks>
+        /// <code>
+        /// CHAIR
+        ///
+        /// FR  chaise
+        /// ES  silla
+        /// </code>
+        /// The object name is enlarged with a TMP rich-text tag rather than a
+        /// second text object, so the whole annotation stays one
+        /// <see cref="Core.SpatialAction"/> and the existing renderer, plate
+        /// sizing and billboarding are reused untouched.
+        /// <para>
+        /// Two-letter language codes, not flag emoji: the project's font atlas
+        /// is a 250-glyph static Latin-1 set with no fallback configured, so an
+        /// emoji would render as nothing at all. Every accented character used
+        /// here (á à é ó ú ñ ç) was confirmed present in that atlas.
+        /// </para>
+        /// </remarks>
+        public string ToLabel()
+        {
+            return "<size=150%>" + English.ToUpperInvariant() + "</size>\n\n" +
+                   "FR  " + French + "\n" +
+                   "ES  " + Spanish;
+        }
+
+        public override string ToString() => English;
+    }
+
+    /// <summary>
+    /// The demo vocabulary, and the offline English-to-translation lookup.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately a plain static table with no dependencies: it works
+    /// offline, with no backend, no camera and no AI. It serves two purposes —
+    /// the deterministic pinch cycle, and the fallback translation source if a
+    /// recogniser ever returns only an English object name.
+    /// </remarks>
+    public static class Vocabulary
+    {
+        private static readonly VocabularyEntry[] Entries =
+        {
+            new VocabularyEntry("Chair", "chaise", "silla"),
+            new VocabularyEntry("Laptop", "ordinateur portable", "portátil"),
+            new VocabularyEntry("Bottle", "bouteille", "botella"),
+            new VocabularyEntry("Backpack", "sac à dos", "mochila"),
+        };
+
+        /// <summary>Extra words a recogniser might plausibly return.</summary>
+        private static readonly VocabularyEntry[] Extra =
+        {
+            new VocabularyEntry("Table", "table", "mesa"),
+            new VocabularyEntry("Cup", "tasse", "taza"),
+            new VocabularyEntry("Book", "livre", "libro"),
+            new VocabularyEntry("Phone", "téléphone", "teléfono"),
+            new VocabularyEntry("Keyboard", "clavier", "teclado"),
+            new VocabularyEntry("Monitor", "écran", "monitor"),
+            new VocabularyEntry("Mouse", "souris", "ratón"),
+            new VocabularyEntry("Door", "porte", "puerta"),
+            new VocabularyEntry("Window", "fenêtre", "ventana"),
+            new VocabularyEntry("Plant", "plante", "planta"),
+            new VocabularyEntry("Lamp", "lampe", "lámpara"),
+            new VocabularyEntry("Pen", "stylo", "bolígrafo"),
+        };
+
+        /// <summary>The deterministic cycle, in order.</summary>
+        public static IReadOnlyList<VocabularyEntry> Cycle => Entries;
+
+        public static int Count => Entries.Length;
+
+        /// <summary>Wraps in both directions, so any pinch index is valid.</summary>
+        public static VocabularyEntry At(int index)
+        {
+            if (Entries.Length == 0) return null;
+            return Entries[((index % Entries.Length) + Entries.Length) % Entries.Length];
+        }
+
+        /// <summary>
+        /// Translations for an English word, or null if it is not known.
+        /// </summary>
+        /// <remarks>
+        /// The offline half of the recognition path: a recogniser that returns
+        /// only "chair" still produces a full trilingual label.
+        /// </remarks>
+        public static VocabularyEntry Lookup(string english)
+        {
+            if (string.IsNullOrWhiteSpace(english)) return null;
+
+            var needle = english.Trim();
+
+            foreach (var table in new[] { Entries, Extra })
+            {
+                foreach (var entry in table)
+                {
+                    if (string.Equals(entry.English, needle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return entry;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Translations for an English word, falling back to showing the word
+        /// on its own rather than nothing.
+        /// </summary>
+        public static VocabularyEntry LookupOrEcho(string english)
+        {
+            var found = Lookup(english);
+            if (found != null) return found;
+
+            var word = string.IsNullOrWhiteSpace(english) ? "Object" : english.Trim();
+            return new VocabularyEntry(word, "-", "-");
+        }
+    }
+}

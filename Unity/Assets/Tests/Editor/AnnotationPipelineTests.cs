@@ -261,6 +261,81 @@ namespace SpatialDebugger.Tests
             }
         }
 
+        // -- the language-learning demo --------------------------------------
+
+        [Test]
+        public void Successive_pinches_render_different_vocabulary_that_coexists()
+        {
+            // Mirrors what PinchAnnotationPlacer does on each pinch: a label
+            // dispatched in WORLD space at the pinched point.
+            var points = new[]
+            {
+                new Vector3(0.5f, 1.2f, 2.0f),
+                new Vector3(-0.8f, 1.0f, 1.6f),
+                new Vector3(1.1f, 0.9f, 2.4f),
+                new Vector3(0.0f, 1.4f, 3.0f),
+            };
+
+            var placed = new System.Collections.Generic.List<Transform>();
+
+            for (var i = 0; i < points.Length; i++)
+            {
+                var action = PinchDemo.SpatialActionForPinch(i, points[i]);
+                Assert.IsTrue(_dispatcher.Dispatch(action), "pinch " + i + " was rejected");
+
+                var annotation = _dispatcher.transform.Cast<Transform>()
+                    .First(t => t.name.StartsWith("SD_") && !placed.Contains(t));
+                placed.Add(annotation);
+            }
+
+            // Every pinch added one, none replaced another.
+            Assert.AreEqual(points.Length, placed.Count);
+            Assert.AreEqual(points.Length, _dispatcher.LiveCount);
+
+            // Each sits at its own pinched point, in world space.
+            for (var i = 0; i < points.Length; i++)
+            {
+                Assert.Less(Vector3.Distance(placed[i].position, points[i]), 0.1f,
+                    "annotation " + i + " is not at the point that was pinched");
+            }
+
+            // And each shows a different word.
+            var words = placed
+                .Select(t => t.GetComponentInChildren<SpatialLabel>())
+                .Where(l => l != null)
+                .Select(l => l.Text)
+                .ToArray();
+
+            Assert.AreEqual(points.Length, words.Length, "some annotation produced no text");
+            CollectionAssert.AllItemsAreUnique(words);
+            StringAssert.Contains("CHAIR", words[0]);
+            StringAssert.Contains("chaise", words[0]);
+            StringAssert.Contains("LAPTOP", words[1]);
+            StringAssert.Contains("portátil", words[1]);
+        }
+
+        [Test]
+        public void A_vocabulary_label_survives_the_wire_format()
+        {
+            var action = PinchDemo.SpatialActionForPinch(3, Vector3.zero);
+            var payload = @"{""speech"":""x"",""actions"":[" + ActionToJson(action) + "]}";
+
+            Assert.IsTrue(AI.AIResponse.TryParse(payload, out var response, out var error), error);
+            Assert.AreEqual(1, response.Actions.Count);
+            StringAssert.Contains("BACKPACK", response.Actions[0].Text);
+            StringAssert.Contains("sac à dos", response.Actions[0].Text);
+        }
+
+        private static string ActionToJson(SpatialAction action)
+        {
+            var p = action.Position;
+            return "{\"type\":\"label\",\"space\":\"world\",\"position\":[" +
+                   p.x.ToString(System.Globalization.CultureInfo.InvariantCulture) + "," +
+                   p.y.ToString(System.Globalization.CultureInfo.InvariantCulture) + "," +
+                   p.z.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]," +
+                   "\"text\":" + Newtonsoft.Json.JsonConvert.ToString(action.Text) + "}";
+        }
+
         [Test]
         public void A_backend_payload_renders_end_to_end()
         {

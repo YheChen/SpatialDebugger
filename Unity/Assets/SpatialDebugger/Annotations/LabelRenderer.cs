@@ -42,6 +42,9 @@ namespace SpatialDebugger.Annotations
             var text = Action != null ? Action.Text : string.Empty;
             var width = SpatialText.EstimateWidth(text) * scale;
             var lines = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+            // A <size=...%> tag makes its line taller than a normal one; give
+            // the plate a little slack so an enlarged heading is not clipped.
+            if (text != null && text.Contains("<size=")) lines += 1;
             var height = 0.028f * scale * lines;
 
             AnnotationVisuals.Primitive(

@@ -82,6 +82,7 @@ namespace SpatialDebugger.Annotations
             _legacy.font = BuiltinFont();
             _legacy.fontSize = 64;
             _legacy.characterSize = 0.02f;
+            // Rich text is off here, so tags would draw literally. Strip them.
             _legacy.richText = false;
             _legacy.anchor = align == SpatialTextAlign.Center
                 ? TextAnchor.MiddleCenter
@@ -96,7 +97,7 @@ namespace SpatialDebugger.Annotations
                 renderer.sharedMaterial = _legacy.font.material;
             }
 
-            Text = content;
+            Text = SpatialText.StripRichText(content);
             Color = color;
             StripShadows(renderer);
         }
@@ -250,12 +251,38 @@ namespace SpatialDebugger.Annotations
             if (string.IsNullOrEmpty(content)) return minimum;
 
             var longest = 0;
-            foreach (var line in content.Split('\n'))
+            foreach (var line in StripRichText(content).Split('\n'))
             {
                 if (line.Length > longest) longest = line.Length;
             }
 
             return Mathf.Max(minimum, longest * perCharacter);
+        }
+
+        /// <summary>
+        /// Removes TMP rich-text tags such as <c>&lt;size=150%&gt;</c>.
+        /// </summary>
+        /// <remarks>
+        /// Needed in two places: measuring a string for plate sizing (the tags
+        /// are not drawn, so counting them oversizes the backing quad), and the
+        /// legacy <see cref="TextMesh"/> backend, which has rich text disabled
+        /// and would otherwise draw the tags as literal visible characters.
+        /// </remarks>
+        public static string StripRichText(string content)
+        {
+            if (string.IsNullOrEmpty(content) || content.IndexOf('<') < 0) return content;
+
+            var builder = new System.Text.StringBuilder(content.Length);
+            var inTag = false;
+
+            foreach (var character in content)
+            {
+                if (character == '<') { inTag = true; continue; }
+                if (character == '>') { inTag = false; continue; }
+                if (!inTag) builder.Append(character);
+            }
+
+            return builder.ToString();
         }
     }
 }

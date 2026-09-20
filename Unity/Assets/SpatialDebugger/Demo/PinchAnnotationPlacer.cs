@@ -26,12 +26,14 @@ namespace SpatialDebugger.Demo
         [SerializeField] private SpatialTargetController targetController;
         [SerializeField] private SpatialActionDispatcher dispatcher;
 
-        [Tooltip("Shown at every pinched location. Use \\n for line breaks.")]
-        [SerializeField, TextArea]
-        private string labelText = "OBJECT\nFrench: objet\nSpanish: objeto";
+        [Tooltip("Successive pinches walk through the vocabulary instead of " +
+                 "repeating one word. Off means every pinch shows the same entry.")]
+        [SerializeField] private bool cycleVocabulary = true;
 
-        [Tooltip("Metres the label floats above the pinched point.")]
-        [SerializeField] private float labelLift = 0.06f;
+        [Tooltip("Metres the label floats above the pinched point. Must clear the " +
+                 "marker and the plate's own half-height, or the label covers the " +
+                 "object it is naming.")]
+        [SerializeField] private float labelLift = 0.18f;
 
         [Tooltip("Size multiplier so the label reads at arm's length and beyond.")]
         [SerializeField] private float labelScale = 2.5f;
@@ -73,13 +75,15 @@ namespace SpatialDebugger.Demo
                 dispatcher.Dispatch(marker);
             }
 
-            var label = SpatialAction.Label(point + Vector3.up * labelLift, labelText);
-            label.Space = SpatialSpace.World;
-            label.Scale = labelScale;
+            var entry = Vocabulary.At(cycleVocabulary ? PlacedCount : 0);
+
+            var label = PinchDemo.SpatialActionForPinch(
+                cycleVocabulary ? PlacedCount : 0, point + Vector3.up * labelLift, labelScale);
             dispatcher.Dispatch(label);
 
             PlacedCount++;
-            Debug.Log("[SpatialDebugger] placed annotation #" + PlacedCount + " at " + point);
+            Debug.Log("[SpatialDebugger] placed annotation #" + PlacedCount + " (" +
+                      entry.English + ") at " + point);
         }
     }
 }
